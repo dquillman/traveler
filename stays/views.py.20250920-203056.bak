@@ -1,0 +1,180 @@
+from django.shortcuts import render, get_object_or_404
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, UpdateView, DeleteView
+from django.http import HttpResponse
+from .models import Stay
+from .forms import StayForm
+import csv, io
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+
+def stay_list(request):
+    stays = Stay.objects.all().order_by("-check_in", "-id")
+    return render(request, "stays/stay_list.html", {"stays": stays})
+
+def stay_detail(request, pk):
+    stay = get_object_or_404(Stay, pk=pk)
+    return render(request, "stays/stay_detail.html", {"stay": stay})
+
+class StayCreateView(CreateView):
+    model = Stay
+    form_class = StayForm
+    template_name = "stays/form.html"
+    success_url = reverse_lazy("stay_list")
+
+class StayUpdateView(UpdateView):
+    model = Stay
+    form_class = StayForm
+    template_name = "stays/form.html"
+    success_url = reverse_lazy("stay_list")
+
+class StayDeleteView(DeleteView):
+    model = Stay
+    template_name = "stays/stay_confirm_delete.html"
+    success_url = reverse_lazy("stay_list")
+
+stay_create = StayCreateView.as_view()
+stay_edit = StayUpdateView.as_view()
+stay_delete = StayDeleteView.as_view()
+
+def stays_map(request):
+    return render(request, "stays/map.html", {})
+
+def stay_charts(request):
+    return render(request, "stays/charts.html", {})
+
+def appearance_edit(request):
+    return render(request, "stays/appearance_edit.html", {})
+
+def health(request):
+    return HttpResponse("ok")
+
+def export_stays_csv(request):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="stays.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Park","City","State","Check in","Leave","#Nts","Rate/nt","Total","Fees","Paid?","Site","Notes"])
+    for s in Stay.objects.all().order_by("check_in", "id"):
+        writer.writerow([
+            s.park or "",
+            s.city or "",
+            s.state or "",
+            s.check_in.isoformat() if s.check_in else "",
+            s.leave_date.isoformat() if s.leave_date else "",
+            s.nights or 0,
+            f"{s.price_night:.2f}" if s.price_night is not None else "",
+            f"{s.total:.2f}" if s.total is not None else "",
+            f"{s.fees:.2f}" if s.fees is not None else "",
+            "Yes" if s.paid else "No",
+            s.site or "",
+            (s.notes or "").replace("\r\n", " ").replace("\n", " "),
+        ])
+    return response
+
+def _parse_date(val):
+    if not val:
+        return None
+    s = str(val).strip()
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            pass
+    try:
+        return datetime.fromisoformat(s).date()
+    except Exception:
+        return None
+
+def _parse_decimal(val):
+    if val in (None, ""):
+        return None
+    s = str(val).strip().replace("$", "").replace(",", "")
+    try:
+        return Decimal(s)
+    except (InvalidOperation, ValueError):
+        return None
+
+def _parse_bool(val):
+    s = (str(val) if val is not None else "").strip().lower()
+    return s in ("1","y","yes","true","t","paid")
+
+def import_stays_csv(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        f = request.FILES["file"]
+        text_stream = io.TextIOWrapper(f.file, encoding="utf-8", errors="replace")
+        reader = csv.DictReader(text_stream)
+
+        def norm(k): return (k or "").strip().lower().replace(" ","").replace("/","").replace("?","")
+        header_map = {norm(h): h for h in (reader.fieldnames or [])}
+        def get(row, friendly):
+            key = norm(friendly)
+            orig = header_map.get(key)
+            return row.get(orig) if orig in row else None
+
+        created = 0
+        for row in reader:
+            park = (get(row,"Park") or "").strip()
+            if not park:
+                continue
+
+            # Accept either City/State columns or legacy "City/St"
+            city = (get(row,"City") or "").strip()
+            state = (get(row,"State") or "").strip()
+            legacy = (get(row,"City/St") or "").strip()
+            if not city and legacy:
+                parts = [p.strip() for p in legacy.split("/") if p.strip()]
+                if len(parts) >= 1: city = parts[0]
+                if len(parts) >= 2: state = parts[1]
+
+            check_in = _parse_date(get(row,"Check in"))
+            leave = _parse_date(get(row,"Leave"))
+            rate = _parse_decimal(get(row,"Rate/nt")) or Decimal("0")
+            fees = _parse_decimal(get(row,"Fees")) or Decimal("0")
+            paid = _parse_bool(get(row,"Paid?"))
+            site = (get(row,"Site") or "").strip()
+            notes = (get(row,"Notes") or "").strip()
+
+            nights = max(((leave - check_in).days) if (check_in and leave) else 0, 0)
+            total = rate * nights if nights else Decimal("0")
+
+            Stay.objects.create(
+                park=park, city=city, state=state,
+                check_in=check_in, leave_date=leave,
+                price_night=rate, fees=fees, paid=paid,
+                site=site, notes=notes, total=total,
+            )
+            created += 1
+
+        return render(request, "stays/import_result.html", {"created": created})
+
+    return render(request, "stays/import.html", {})
+
+
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.forms import ModelForm
+try:
+    from .models import Stay
+except Exception:
+    Stay = None
+
+class _AutoStayForm(ModelForm):
+    class Meta:
+        model = Stay
+        fields = '__all__'
+
+def stay_add(request):
+    if Stay is None:
+        return render(request, 'stays/stay_form.html', {'form': None, 'error': 'Stay model not found'})
+    form = _AutoStayForm(request.POST or None, request.FILES or None)
+    if request.method == 'POST' and form.is_valid():
+        obj = form.save()
+        # Prefer detail if it resolves, otherwise list
+        try:
+            return redirect('stays:detail', pk=obj.pk)
+        except Exception:
+            try:
+                return redirect('stays:list')
+            except Exception:
+                return redirect('/')
+    return render(request, 'stays/stay_form.html', {'form': form})

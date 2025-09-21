@@ -1,0 +1,22 @@
+
+app_name = "stays"
+
+from django.contrib import admin
+from django.urls import include, path
+from . import views
+from stays import views as stay_views
+
+urlpatterns = [
+    path('<int:pk>/edit/', views.stay_edit, name='edit'),
+    path('<int:pk>/', views.stay_detail, name='detail'),
+    path('add/', views.stay_add, name='add'),
+    path("admin/", admin.site.urls),
+
+    # Home page → list of stays
+    path("", stay_views.stay_list, name="stay_list"),
+
+    # Detail page for a single stay
+    path("stay/<int:pk>/", stay_views.stay_detail, name="stay_detail"),
+
+    # Add/Edit routes from the app
+]

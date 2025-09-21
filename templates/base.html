@@ -1,0 +1,27 @@
+﻿{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Traveler{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .site-header { background:#0b1b2b; }
+    .site-header .container { max-width:1200px; margin:0 auto; padding:0.75rem 1rem; display:flex; align-items:center; justify-content:space-between; }
+    .brand { color:#fff; font-weight:700; text-decoration:none; font-size:1.1rem; letter-spacing:.3px; }
+    .menu { list-style:none; margin:0; padding:0; display:flex; gap:1rem; }
+    .menu a { color:#cfe4ff; text-decoration:none; padding:.35rem .5rem; border-radius:.5rem; }
+    .menu a:hover, .menu a:focus { background:#132a44; color:#fff; }
+    main.container { max-width:1200px; margin:1rem auto; padding:0 1rem; }
+  </style>
+  <link href="{% static 'css/style.css' %}" rel="stylesheet">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% include "partials/navbar.html" %}
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

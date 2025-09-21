@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Traveler{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f6f7f8; --text: #111; --muted: #666; --card: #fff;
+      --border: #e5e7eb; --accent: #111; --accent-contrast: #fff;
+      --accent-weak: #f3f4f6; --danger: #b00020; --danger-border: #8a0019; --success: #0a7c2f;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--text); background: var(--bg); }
+    a { color: var(--text); text-decoration: none; }
+    header { background: #111; color: #fff; padding: 12px 16px; }
+    .nav { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
+    .brand { font-weight: 700; letter-spacing: .3px; }
+    .nav a { color: #fff; opacity: .9; } .nav a:hover { opacity: 1; }
+    .nav .spacer { flex: 1; }
+    main { max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .btn { display: inline-block; padding: 8px 12px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-contrast); border-radius: 8px; }
+    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--text); }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <a class="brand" href="{% url 'home' %}">Traveler</a>
+      <a href="{% url 'stay_list' %}">Stays</a>
+      <a href="{% url 'stay_create' %}">Add</a>
+      <a href="{% url 'stays_map' %}">Map</a>
+      <a href="{% url 'stay_charts' %}">Charts</a>
+      <a href="{% url 'import_stays_csv' %}">Import</a>
+      <a href="{% url 'export_stays_csv' %}">Export</a>
+      <span class="spacer"></span>
+    </div>
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

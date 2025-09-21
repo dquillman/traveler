@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ mode|default:"Create"|title }} Stay</h1>
+<form method="post" enctype="multipart/form-data" class="space-y-4">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div>
+      {{ form.name.label_tag }} {{ form.name }}
+    </div>
+    <div>
+      {{ form.address.label_tag }} {{ form.address }}
+    </div>
+    <div>
+      {{ form.city.label_tag }} {{ form.city }}
+    </div>
+    <div>
+      {{ form.state.label_tag }} {{ form.state }}
+    </div>
+    <div>
+      {{ form.zipcode.label_tag }} {{ form.zipcode }}
+    </div>
+
+    <!-- Visible on add/edit form only (this template) -->
+    <div>
+      {{ form.latitude.label_tag }} {{ form.latitude }}
+      <small class="text-gray-400 block">Auto-filled from address; you can override.</small>
+    </div>
+    <div>
+      {{ form.longitude.label_tag }} {{ form.longitude }}
+      <small class="text-gray-400 block">Auto-filled from address; you can override.</small>
+    </div>
+  </div>
+
+  <!-- Render any other fields that your ModelForm includes -->
+  {% for field in form.visible_fields %}
+    {% if field.name not in "name address city state zipcode latitude longitude"|split:" " %}
+      <div>
+        {{ field.label_tag }} {{ field }}
+        {% if field.help_text %}<small class="text-gray-400">{{ field.help_text }}</small>{% endif %}
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  <button type="submit" class="btn btn-primary">Save</button>
+</form>
+{% endblock %}

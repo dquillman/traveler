@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Stays{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-2xl font-semibold mb-4">Stays</h1>
+  <p class="mb-4"><a class="btn btn-primary" href="{% url 'stays:add' %}">Add Stay</a></p>
+  <ul class="space-y-2">
+    {% for s in stays %}
+      <li class="p-3 rounded-lg border">
+        <a class="font-medium" href="{% url 'stays:detail' s.pk %}">
+          {{ s.park }} {{ s.site }} — {{ s.city }}, {{ s.state }}
+        </a>
+        <div class="text-sm opacity-70">Lat: {{ s.latitude }} &nbsp; Lng: {{ s.longitude }}</div>
+        <div class="text-sm"><a href="{% url 'stays:edit' s.pk %}">Edit</a></div>
+      </li>
+    {% empty %}
+      <li class="p-3 rounded-lg border">No stays yet.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

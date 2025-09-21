@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Stays Map{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-2xl font-semibold mb-4">Stays Map</h1>
+  <div id="map" style="height: 70vh; border-radius: 10px; overflow: hidden;"></div>
+  <p class="mt-4">
+    <a class="btn" href="{% url 'stays:list' %}">Back to list</a>
+  </p>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<script>
+  const stays = JSON.parse(document.getElementById('stays-data').textContent);
+
+  let center = [39.5, -98.35];
+  const map = L.map('map').setView(center, stays.length ? 5 : 4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const group = L.featureGroup();
+  stays.forEach(s => {
+    if (s.lat == null || s.lng == null) return;
+    const m = L.marker([s.lat, s.lng]).bindPopup(`<strong>${s.title}</strong><br>${s.subtitle}`);
+    group.addLayer(m);
+  });
+  if (group.getLayers().length) {
+    group.addTo(map);
+    map.fitBounds(group.getBounds().pad(0.2));
+  }
+</script>
+
+<script type="application/json" id="stays-data">{{ stays_json|safe }}</script>
+{% endblock %}

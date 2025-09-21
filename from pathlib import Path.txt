@@ -1,0 +1,76 @@
+from pathlib import Path
+import re
+from datetime import datetime
+
+PROJ = Path.cwd()
+URLS = PROJ / "stays" / "urls.py"
+VIEWS = PROJ / "stays" / "views.py"
+
+def backup(p: Path):
+    if p.exists():
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+        p.with_suffix(p.suffix + f".{ts}.bak").write_bytes(p.read_bytes())
+
+def read(p: Path):
+    return p.read_text(encoding="utf-8", errors="replace") if p.exists() else ""
+
+def write(p: Path, s: str):
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(s, encoding="utf-8", newline="\n")
+
+def ensure_urls_has_list():
+    txt = read(URLS)
+    if not txt:
+        txt = "from django.urls import path\nfrom . import views\n\napp_name = 'stays'\n\nurlpatterns = []\n"
+    if "from django.urls" not in txt:
+        txt = "from django.urls import path\n" + txt
+    if re.search(r"from\s+\.\s+import\s+views", txt) is None:
+        txt = re.sub(r"(from\s+django\.urls\s+import[^\n]*\n)", r"\1from . import views\n", txt, count=1) or ("from . import views\n" + txt)
+    if "app_name" not in txt:
+        txt = re.sub(r"(from\s+\.\s+import\s+views[^\n]*\n)", r"\1\napp_name = 'stays'\n", txt, count=1) or (txt + "\napp_name = 'stays'\n")
+    if "urlpatterns" not in txt:
+        txt += "\nurlpatterns = []\n"
+
+    if not re.search(r"name\s*=\s*['\"]list['\"]", txt):
+        txt = re.sub(r"urlpatterns\s*=\s*\[",
+                     lambda m: m.group(0) + "\n    path('', views.stay_list, name='list'),",
+                     txt, count=1)
+
+    backup(URLS)
+    write(URLS, txt)
+
+def ensure_views_has_stay_list():
+    txt = read(VIEWS)
+    if "def stay_list(" in txt:
+        return
+    for cand in ["list_stays", "stays_list", "index", "home", "stays_home"]:
+        if re.search(rf"def\s+{cand}\s*\(", txt):
+            alias = (
+                "\n\n# Auto-added alias so {% url 'stays:list' %} works\n"
+                "def stay_list(request, *args, **kwargs):\n"
+                f"    return {cand}(request, *args, **kwargs)\n"
+            )
+            backup(VIEWS)
+            write(VIEWS, txt + alias)
+            return
+    impl = (
+        "\n\nfrom django.shortcuts import render\n"
+        "try:\n"
+        "    from .models import Stay\n"
+        "except Exception:\n"
+        "    Stay = None\n"
+        "\n"
+        "def stay_list(request):\n"
+        "    qs = Stay.objects.all() if Stay else []\n"
+        "    return render(request, 'stays/stay_list.html', {'stays': qs})\n"
+    )
+    backup(VIEWS)
+    write(VIEWS, txt + impl)
+
+def main():
+    ensure_urls_has_list()
+    ensure_views_has_stay_list()
+    print("Ensured stays:list route and view are present.")
+
+if __name__ == "__main__":
+    main()

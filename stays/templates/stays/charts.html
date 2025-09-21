@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Stays Charts{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-2xl font-semibold mb-4">Stays Charts</h1>
+  <p class="mb-4"><a class="btn" href="{% url 'stays:list' %}">Back to list</a></p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div>
+      <h2 class="font-medium mb-2">Stays by State</h2>
+      <canvas id="byState"></canvas>
+    </div>
+
+    <div>
+      <h2 class="font-medium mb-2">Stays by Year</h2>
+      {% if has_years %}
+        <canvas id="byYear"></canvas>
+      {% else %}
+        <div class="opacity-70">No date field detected; skipping year chart.</div>
+      {% endif %}
+    </div>
+
+    <div class="lg:col-span-2">
+      <h2 class="font-medium mb-2">Rating Distribution</h2>
+      {% if has_rating %}
+        <canvas id="ratingDist"></canvas>
+      {% else %}
+        <div class="opacity-70">No rating field detected; skipping rating chart.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const states       = {{ states|safe }};
+  const statesSeries = {{ states_series|safe }};
+  const yearsLabels  = {{ years_labels|safe }};
+  const yearsSeries  = {{ years_series|safe }};
+  const ratingLabels = {{ rating_labels|safe }};
+  const ratingSeries = {{ rating_series|safe }};
+
+  new Chart(document.getElementById('byState'), {
+    type: 'bar',
+    data: { labels: states, datasets: [{ label: 'Stays', data: statesSeries }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { autoSkip: true }} } }
+  });
+
+  if (yearsLabels.length) {
+    new Chart(document.getElementById('byYear'), {
+      type: 'line',
+      data: { labels: yearsLabels, datasets: [{ label: 'Stays per Year', data: yearsSeries }] },
+      options: { responsive: true }
+    });
+  }
+
+  if (ratingLabels.length) {
+    new Chart(document.getElementById('ratingDist'), {
+      type: 'bar',
+      data: { labels: ratingLabels, datasets: [{ label: 'Count', data: ratingSeries }] },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+﻿{% extends "stays/base.html" %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin-top:0;">Stays</h1>
+    <form method="get" style="margin-bottom:12px;">
+      <input name="q" class="txt" placeholder="Search by name..." value="{{ q }}">
+      <button class="btn" style="margin-left:8px;">Search</button>
+      <a class="btn btn-outline" href="{% url "stay_create" %}" style="margin-left:8px;">Add Stay</a>
+    </form>
+    <div style="overflow:auto; border-radius:8px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Photo</th><th>Name</th><th>City</th><th>State</th>
+            <th>Rating</th><th>Hookups</th><th>Price/Night</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for s in stays %}
+          <tr>
+            <td>{% if s.photo %}<img class="thumb" src="{{ s.photo.url }}" alt="{{ s.name }}">{% else %}<span class="muted">-</span>{% endif %}</td>
+            <td><a href="{% url 'stays:detail' s.id %}">{{ s.name }}</a>{% if s.is_background %} <span class="muted">• background</span>{% endif %}</td>
+            <td>{{ s.city }}</td>
+            <td>{{ s.state }}</td>
+            <td class="muted">{{ s.stars_html|safe }}</td>
+            <td>
+              {% if s.water_hookup %}Water{% endif %}
+              {% if s.sewer_hookup %}{% if s.water_hookup %} / {% endif %}Sewer{% endif %}
+              {% if s.electric_30a or s.electric_50a %}{% if s.water_hookup or s.sewer_hookup %} / {% endif %}{% endif %}
+              {% if s.electric_30a %}30A{% endif %}{% if s.electric_30a and s.electric_50a %} / {% endif %}{% if s.electric_50a %}50A{% endif %}
+              {% if s.electric_extra %}{% if s.water_hookup or s.sewer_hookup or s.electric_30a or s.electric_50a %} / {% endif %}Elect. Extra{% endif %}
+              {% if not s.water_hookup and not s.sewer_hookup and not s.electric_30a and not s.electric_50a and not s.electric_extra %}<span class="muted">-</span>{% endif %}
+            </td>
+            <td class="muted">{% if s.price_night %}${{ s.price_night|floatformat:2 }}{% else %}-{% endif %}</td>
+            <td class="actions"><a href="{% url 'stays:edit' s.id %}">Edit</a> <a href="{% url 'stay_delete' s.id %}">Delete</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8" class="muted">No stays yet. <a href="{% url 'stay_create' %}">Add one</a> or visit the <a href="/map/">map</a>.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

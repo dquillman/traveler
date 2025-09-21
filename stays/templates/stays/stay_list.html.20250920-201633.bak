@@ -1,0 +1,13 @@
+﻿<h1>Stays</h1>
+<p><a href="{% url 'stays:add' %}">Add Stay</a></p>
+<ul>
+  {% for s in stays %}
+    <li>
+      <a href="{% url 'stays:detail' s.pk %}">{{ s.park }} {{ s.site }} {{ s.city }} {{ s.state }}</a>
+      � lat: {{ s.latitude }} lng: {{ s.longitude }}
+      [<a href="{% url 'stays:edit' s.pk %}">edit</a>]
+    </li>
+  {% empty %}
+    <li>No stays yet.</li>
+  {% endfor %}
+</ul>

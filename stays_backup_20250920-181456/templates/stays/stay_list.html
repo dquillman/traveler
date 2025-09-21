@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Your Stays · Traveler{% endblock %}
+{% block content %}
+  <div class="actions" style="margin-bottom:12px">
+    <a class="btn" href="{% url 'stay_create' %}">Add Stay</a>
+  </div>
+  <div class="card" style="padding:0">
+    <table>
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Park</th>
+          <th>City</th>
+          <th>State</th>
+          <th>Check in</th>
+          <th>Leave</th>
+          <th class="right"># Nts</th>
+          <th class="right">Rate/nt</th>
+          <th class="right">Total</th>
+          <th class="right">Fees</th>
+          <th>Paid?</th>
+          <th>Site</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in stays %}
+        <tr>
+          <td>{% if s.photo %}<img class="thumb" src="{{ s.photo.url }}" alt="photo">{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td><a href="{% url 'stay_detail' s.pk %}">{{ s.park|default:"—" }}</a></td>
+          <td>{{ s.city|default:"—" }}</td>
+          <td>{{ s.state|default:"—" }}</td>
+          <td>{{ s.check_in|date:"Y-m-d"|default:"—" }}</td>
+          <td>{{ s.leave_date|date:"Y-m-d"|default:"—" }}</td>
+          <td class="right">{{ s.nights|default:0 }}</td>
+          <td class="right">{{ s.price_night|default_if_none:0|floatformat:2 }}</td>
+          <td class="right">{{ s.total|default_if_none:0|floatformat:2 }}</td>
+          <td class="right">{{ s.fees|default_if_none:0|floatformat:2 }}</td>
+          <td>{% if s.paid %}<span class="badge badge-ok">Paid</span>{% else %}<span class="badge badge-no">No</span>{% endif %}</td>
+          <td>{{ s.site|default:"" }}</td>
+          <td class="right"><a class="btn btn-outline" href="{% url 'stay_edit' s.pk %}">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="13" class="muted" style="text-align:center; padding:16px">No stays yet. Click “Add Stay”.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

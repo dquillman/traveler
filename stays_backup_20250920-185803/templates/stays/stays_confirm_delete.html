@@ -1,0 +1,8 @@
+﻿{% extends "stays/base.html" %}
+{% block content %}
+  <div class="card">
+    <h1>Delete: {{ stay.name }}</h1>
+    <p>Are you sure you want to delete this stay?</p>
+    <form method="post">{% csrf_token %}<button class="btn">Yes, delete</button> <a class="btn btn-outline" href="{% url 'stay_detail' stay.id %}">Cancel</a></form>
+  </div>
+{% endblock %}

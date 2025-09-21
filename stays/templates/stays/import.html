@@ -1,0 +1,14 @@
+﻿{% extends "base.html" %}
+{% block title %}Import Stays (CSV){% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Import Stays</h1>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <p><input type="file" name="file" accept=".csv" required></p>
+      <div class="actions"><button type="submit" class="btn">Upload & Import</button></div>
+    </form>
+    <p class="muted" style="margin-top:8px">Preferred headers: <code>Park, City, State, Check in, Leave, #Nts, Rate/nt, Total, Fees, Paid?, Site, Notes</code>. Legacy <code>City/St</code> still supported.</p>
+  </div>
+{% endblock %}
+

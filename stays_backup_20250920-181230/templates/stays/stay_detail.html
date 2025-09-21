@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Stay · {{ stay.park }}{% endblock %}
+{% block content %}
+  <div class="actions" style="justify-content: space-between; margin-bottom:12px">
+    <h1>{{ stay.park|default:"(unnamed)" }}</h1>
+    <div class="actions">
+      <a href="{% url 'stay_edit' stay.pk %}" class="btn">Edit</a>
+      <a href="{% url 'stay_list' %}" class="btn btn-outline">Back to list</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="grid-2">
+      <div>
+        <label>Location</label>
+        <div>{{ stay.city|default:"" }}{% if stay.city and stay.state %}, {% endif %}{{ stay.state|default:"" }}</div>
+      </div>
+      <div>
+        <label>Paid?</label>
+        <div>{% if stay.paid %}<span class="badge badge-ok">Paid</span>{% else %}<span class="badge badge-no">No</span>{% endif %}</div>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:8px">
+      <div><label>Check in</label><div>{{ stay.check_in|date:"Y-m-d"|default:"—" }}</div></div>
+      <div><label>Leave</label><div>{{ stay.leave_date|date:"Y-m-d"|default:"—" }}</div></div>
+      <div><label># Nights</label><div>{{ stay.nights|default:0 }}</div></div>
+    </div>
+    <div class="grid-3" style="margin-top:8px">
+      <div><label>Rate/nt</label><div>{{ stay.price_night|default_if_none:0|floatformat:2 }}</div></div>
+      <div><label>Total</label><div>{{ stay.total|default_if_none:0|floatformat:2 }}</div></div>
+      <div><label>Fees</label><div>{{ stay.fees|default_if_none:0|floatformat:2 }}</div></div>
+    </div>
+    <div class="grid-2" style="margin-top:8px">
+      <div><label>Site</label><div>{{ stay.site|default:"" }}</div></div>
+      <div>{% if stay.photo %}<img class="thumb" src="{{ stay.photo.url }}" alt="photo">{% endif %}</div>
+    </div>
+    <div style="margin-top:8px">
+      <label>Notes</label>
+      <div class="muted">{{ stay.notes|default:"" }}</div>
+    </div>
+  </div>
+{% endblock %}

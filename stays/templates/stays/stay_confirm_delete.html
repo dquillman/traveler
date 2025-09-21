@@ -1,0 +1,15 @@
+﻿{% extends "base.html" %}
+{% block title %}Delete Stay{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Delete this stay?</h1>
+    <p><strong>{{ object.park }}</strong><br>{{ object.city }}, {{ object.state }} - {{ object.check_in }} → {{ object.leave_date }} ({{ object.nights }} nights)</p>
+    <form method="post">{% csrf_token %}
+      <div class="actions" style="margin-top:12px">
+        <button class="btn btn-danger" type="submit">Yes, delete</button>
+        <a class="btn btn-outline" href="{% url 'stays:detail' object.pk %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+

@@ -1,0 +1,12 @@
+﻿{% extends "stays/base.html" %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin-top:0;">Appearance</h1>
+    <p class="muted">Using defaults. The <code>SiteAppearance</code> model is optional; the site still works.</p>
+    <dl>
+      <dt>Site Name</dt><dd>{{ site_appearance.site_name }}</dd>
+      <dt>Primary Color</dt><dd>{{ site_appearance.primary_color }}</dd>
+      <dt>Secondary Color</dt><dd>{{ site_appearance.secondary_color }}</dd>
+    </dl>
+  </div>
+{% endblock %}

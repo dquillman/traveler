@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Import Complete{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Import Complete</h1>
+    <p>Created {{ created }} stay{{ created|pluralize }}.</p>
+    <div class="actions"><a class="btn btn-outline" href="{% url 'stay_list' %}">Back to list</a></div>
+  </div>
+{% endblock %}

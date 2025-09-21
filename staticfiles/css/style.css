@@ -1,0 +1,10 @@
+
+:root{--bg:#0b1220;--fg:#e5e7eb;--brand:#22d3ee;--muted:#94a3b8;--border:#334155}
+table.classic{width:100%;border-collapse:collapse}
+table.classic th,table.classic td{border-bottom:1px solid var(--border);padding:.6rem .5rem;vertical-align:middle}
+table.classic th{position:sticky;top:64px;background:#0b1220;font-weight:600;text-align:left}
+td.num{text-align:right}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:.75rem;color:var(--muted)}
+a.btn{display:inline-block;padding:.35rem .7rem;border:1px solid var(--border);border-radius:.5rem}
+a.btn-primary{background:var(--brand);color:#001014;border-color:transparent}
+.thumb{width:60px;height:46px;object-fit:cover;border-radius:.35rem;border:1px solid var(--border);background:#111827}

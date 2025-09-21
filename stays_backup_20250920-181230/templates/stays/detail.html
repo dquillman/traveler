@@ -1,0 +1,53 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Stay Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 1.5rem; }
+    h1 { margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; }
+    th { width: 180px; background: #f7f7f7; text-align: right; }
+    .actions { display: flex; gap: 8px; }
+    .btn {
+      padding: 8px 12px;
+      border: 1px solid #222;
+      border-radius: 8px;
+      text-decoration: none;
+      background: #111;
+      color: #fff;
+    }
+    .btn-link {
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 8px 12px;
+      text-decoration: none;
+      background: #fff;
+      color: #111;
+    }
+  </style>
+</head>
+<body>
+  <h1>{{ stay.park }}</h1>
+
+  <table>
+    <tr><th>City/St</th><td>{{ stay.city_state }}</td></tr>
+    <tr><th>Check in</th><td>{{ stay.check_in }}</td></tr>
+    <tr><th>Leave</th><td>{{ stay.leave_date }}</td></tr>
+    <tr><th># Nights</th><td>{{ stay.nights }}</td></tr>
+    <tr><th>Rate/nt</th><td>{{ stay.price_night }}</td></tr>
+    <tr><th>Total</th><td>{{ stay.total }}</td></tr>
+    <tr><th>Fees</th><td>{{ stay.fees }}</td></tr>
+    <tr><th>Paid?</th><td>{{ stay.paid|yesno:"Yes,No" }}</td></tr>
+    <tr><th>Site</th><td>{{ stay.site }}</td></tr>
+    <tr><th>Notes</th><td>{{ stay.notes }}</td></tr>
+  </table>
+
+  <div class="actions">
+    <a href="{% url 'stay_edit' stay.pk %}" class="btn">Edit</a>
+    <a href="{% url 'stay_list' %}" class="btn-link">Back to list</a>
+  </div>
+</body>
+</html>

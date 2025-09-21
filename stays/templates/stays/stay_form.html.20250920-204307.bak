@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Stay Form{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-3xl">
+  <h1 class="text-2xl font-semibold mb-4">{% if stay %}Edit Stay{% else %}Add Stay{% endif %}</h1>
+  <form method="post" enctype="multipart/form-data" class="space-y-4">
+    {% csrf_token %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        {{ form.name.label_tag }} {{ form.name }}
+      </div>
+      <div>
+        {{ form.address.label_tag }} {{ form.address }}
+      </div>
+      <div>
+        {{ form.city.label_tag }} {{ form.city }}
+      </div>
+      <div>
+        {{ form.state.label_tag }} {{ form.state }}
+      </div>
+      <div>
+        {{ form.zipcode.label_tag }} {{ form.zipcode }}
+      </div>
+      <div>
+        {{ form.latitude.label_tag }} {{ form.latitude }}
+        <small class="block opacity-70">Auto-filled from address; you can override.</small>
+      </div>
+      <div>
+        {{ form.longitude.label_tag }} {{ form.longitude }}
+        <small class="block opacity-70">Auto-filled from address; you can override.</small>
+      </div>
+    </div>
+
+    <!-- Render any other fields that your ModelForm includes -->
+    {% for field in form.visible_fields %}
+      {% if field.name != 'name' and field.name != 'address' and field.name != 'city'
+            and field.name != 'state' and field.name != 'zipcode'
+            and field.name != 'latitude' and field.name != 'longitude' %}
+        <div>
+          {{ field.label_tag }} {{ field }}
+          {% if field.help_text %}<small class="opacity-70">{{ field.help_text }}</small>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+</div>
+{% endblock %}

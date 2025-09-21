@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit Stay{% else %}Add Stay{% endif %}{% endblock %}
+{% block content %}
+  <h1>{% if object %}Edit Stay{% else %}Add Stay{% endif %}</h1>
+  <form method="post" class="card" novalidate enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="grid-2">
+      <div><label for="id_park">Park</label>{{ form.park }}</div>
+      <div></div>
+    </div>
+    <div class="grid-2">
+      <div><label for="id_city">City</label>{{ form.city }}</div>
+      <div><label for="id_state">State</label>{{ form.state }}</div>
+    </div>
+    <div class="grid-2">
+      <div><label for="id_check_in">Check in</label>{{ form.check_in }}</div>
+      <div><label for="id_leave_date">Leave</label>{{ form.leave_date }}</div>
+    </div>
+    <div class="grid-3">
+      <div><label for="id_price_night">Rate/nt</label>{{ form.price_night }}</div>
+      <div><label for="id_nights">#Nts</label>{{ form.nights }}</div>
+      <div><label for="id_total">Total</label>{{ form.total }}</div>
+    </div>
+    <div class="grid-3">
+      <div><label for="id_fees">Fees</label>{{ form.fees }}</div>
+      <div><label for="id_paid">Paid?</label><br>{{ form.paid }}</div>
+      <div><label for="id_site">Site</label>{{ form.site }}</div>
+    </div>
+    <div><label for="id_notes">Notes</label>{{ form.notes }}</div>
+    <div class="grid-2">
+      <div>
+        <label for="id_photo">Photo</label>
+        {{ form.photo }}
+        {% if object.photo %}
+          <div style="margin-top:6px"><img class="thumb" src="{{ object.photo.url }}" alt="photo"></div>
+        {% endif %}
+      </div>
+      <div></div>
+    </div>
+    <div class="actions" style="margin-top:12px">
+      <button type="submit" class="btn">Save</button>
+      <a class="btn btn-outline" href="{% url 'stay_list' %}">Back</a>
+    </div>
+  </form>
+{% endblock %}
+{% block scripts %}
+<script>
+(function() {
+  function getNum(id){const el=document.getElementById(id);if(!el)return 0;const v=parseFloat(el.value);return isNaN(v)?0:v}
+  function parseDate(id){const el=document.getElementById(id);if(!el||!el.value)return null;const [y,m,d]=el.value.split("-").map(Number);return new Date(y,m-1,d)}
+  const MS=86400000;
+  function nights(a,b){if(!a||!b)return 0;return Math.max(Math.round((b-a)/MS),0)}
+  function update(){
+    const ci=parseDate("id_check_in"), lv=parseDate("id_leave_date");
+    const n=nights(ci,lv); const rate=getNum("id_price_night");
+    const nEl=document.getElementById("id_nights"), tEl=document.getElementById("id_total");
+    if(nEl) nEl.value=n; if(tEl) tEl.value=(rate*n).toFixed(2);
+  }
+  ["id_check_in","id_leave_date","id_price_night"].forEach(id=>{const el=document.getElementById(id); if(el) el.addEventListener("input",update)});
+  document.addEventListener("DOMContentLoaded", update);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+from django.contrib import admin
+from django.urls import include, path
+
+from django.conf import settings
+from django.conf.urls.static import static
+from django.views.generic import TemplateView
+from stays import views as stay_views
+
+urlpatterns = [
+    path("stays/", include(("stays.urls", "stays"), namespace="stays")),
+
+    path("admin/", admin.site.urls),
+    path("", TemplateView.as_view(template_name="home.html"), name="home"),
+    path("stays/", stay_views.stay_list, name="stay_list"),
+    path("stay/<int:pk>/", stay_views.stay_detail, name="stay_detail"),
+    path("stays/new/", stay_views.stay_create, name="stay_create"),
+    path("stays/<int:pk>/edit/", stay_views.stay_edit, name="stay_edit"),
+    path("stays/<int:pk>/delete/", stay_views.stay_delete, name="stay_delete"),
+    path("map/", stay_views.stays_map, name="stays_map"),
+    path("charts/", stay_views.stay_charts, name="stay_charts"),
+    path("appearance/", stay_views.appearance_edit, name="appearance_edit"),
+    path("export/", stay_views.export_stays_csv, name="export_stays_csv"),
+    path("import/", stay_views.import_stays_csv, name="import_stays_csv"),
+    path("health/", stay_views.health, name="health"),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
