@@ -1,0 +1,78 @@
+=== git ===
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	_term.log
+	config/__pycache__/__init__.cpython-312.pyc
+	config/__pycache__/settings.cpython-312.pyc
+	stays/__pycache__/__init__.cpython-312.pyc
+	stays/__pycache__/admin.cpython-312.pyc
+	stays/__pycache__/apps.cpython-312.pyc
+	stays/__pycache__/models.cpython-312.pyc
+	stays/__pycache__/signals.cpython-312.pyc
+	stays/__pycache__/utils.cpython-312.pyc
+
+nothing added to commit but untracked files present (use "git add" to track)
+Already up to date.
+
+=== python/pip ===
+Python 3.12.1
+pip 23.2.1 from /workspaces/traveler/.venv/lib/python3.12/site-packages/pip (python 3.12)
+Collecting Django>=5.2.1 (from -r requirements.txt (line 1))
+  Obtaining dependency information for Django>=5.2.1 from https://files.pythonhosted.org/packages/f5/af/6593f6d21404e842007b40fdeb81e73c20b6649b82d020bb0801b270174c/django-5.2.6-py3-none-any.whl.metadata
+  Downloading django-5.2.6-py3-none-any.whl.metadata (4.1 kB)
+Collecting requests>=2.32 (from -r requirements.txt (line 2))
+  Obtaining dependency information for requests>=2.32 from https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl.metadata
+  Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+Collecting Pillow>=10.0 (from -r requirements.txt (line 3))
+  Obtaining dependency information for Pillow>=10.0 from https://files.pythonhosted.org/packages/e4/c9/06dd4a38974e24f932ff5f98ea3c546ce3f8c995d3f0985f8e5ba48bba19/pillow-11.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata
+  Downloading pillow-11.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.0 kB)
+Collecting asgiref>=3.8.1 (from Django>=5.2.1->-r requirements.txt (line 1))
+  Obtaining dependency information for asgiref>=3.8.1 from https://files.pythonhosted.org/packages/7c/3c/0464dcada90d5da0e71018c04a140ad6349558afb30b3051b4264cc5b965/asgiref-3.9.1-py3-none-any.whl.metadata
+  Downloading asgiref-3.9.1-py3-none-any.whl.metadata (9.3 kB)
+Collecting sqlparse>=0.3.1 (from Django>=5.2.1->-r requirements.txt (line 1))
+  Obtaining dependency information for sqlparse>=0.3.1 from https://files.pythonhosted.org/packages/a9/5c/bfd6bd0bf979426d405cc6e71eceb8701b148b16c21d2dc3c261efc61c7b/sqlparse-0.5.3-py3-none-any.whl.metadata
+  Downloading sqlparse-0.5.3-py3-none-any.whl.metadata (3.9 kB)
+Collecting charset_normalizer<4,>=2 (from requests>=2.32->-r requirements.txt (line 2))
+  Obtaining dependency information for charset_normalizer<4,>=2 from https://files.pythonhosted.org/packages/16/ab/0233c3231af734f5dfcf0844aa9582d5a1466c985bbed6cedab85af9bfe3/charset_normalizer-3.4.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata
+  Downloading charset_normalizer-3.4.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (36 kB)
+Collecting idna<4,>=2.5 (from requests>=2.32->-r requirements.txt (line 2))
+  Obtaining dependency information for idna<4,>=2.5 from https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl.metadata
+  Downloading idna-3.10-py3-none-any.whl.metadata (10 kB)
+Collecting urllib3<3,>=1.21.1 (from requests>=2.32->-r requirements.txt (line 2))
+  Obtaining dependency information for urllib3<3,>=1.21.1 from https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl.metadata
+  Downloading urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting certifi>=2017.4.17 (from requests>=2.32->-r requirements.txt (line 2))
+  Obtaining dependency information for certifi>=2017.4.17 from https://files.pythonhosted.org/packages/e5/48/1549795ba7742c948d2ad169c1c8cdbae65bc450d6cd753d124b17c8cd32/certifi-2025.8.3-py3-none-any.whl.metadata
+  Downloading certifi-2025.8.3-py3-none-any.whl.metadata (2.4 kB)
+Downloading django-5.2.6-py3-none-any.whl (8.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.3/8.3 MB 33.5 MB/s eta 0:00:00
+Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.7/64.7 kB 10.1 MB/s eta 0:00:00
+Downloading pillow-11.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.6/6.6 MB 43.9 MB/s eta 0:00:00
+Downloading asgiref-3.9.1-py3-none-any.whl (23 kB)
+Downloading certifi-2025.8.3-py3-none-any.whl (161 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 161.2/161.2 kB 24.0 MB/s eta 0:00:00
+Downloading charset_normalizer-3.4.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (151 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 151.8/151.8 kB 12.2 MB/s eta 0:00:00
+Downloading idna-3.10-py3-none-any.whl (70 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 70.4/70.4 kB 10.9 MB/s eta 0:00:00
+Downloading sqlparse-0.5.3-py3-none-any.whl (44 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.4/44.4 kB 5.6 MB/s eta 0:00:00
+Downloading urllib3-2.5.0-py3-none-any.whl (129 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 129.8/129.8 kB 19.6 MB/s eta 0:00:00
+Installing collected packages: urllib3, sqlparse, Pillow, idna, charset_normalizer, certifi, asgiref, requests, Django
+Successfully installed Django-5.2.6 Pillow-11.3.0 asgiref-3.9.1 certifi-2025.8.3 charset_normalizer-3.4.3 idna-3.10 requests-2.32.5 sqlparse-0.5.3 urllib3-2.5.0
+
+[notice] A new release of pip is available: 23.2.1 -> 25.2
+[notice] To update, run: pip install --upgrade pip
+
+=== django check/migrate ===
+System check identified no issues (0 silenced).
+CommandError: Conflicting migrations detected; multiple leaf nodes in the migration graph: (0010_add_lat_lng_fix, 0011_force_add_lat_lng in stays).
+To fix them run 'python manage.py makemigrations --merge'
+CommandError: Conflicting migrations detected; multiple leaf nodes in the migration graph: (0010_add_lat_lng_fix, 0011_force_add_lat_lng in stays).
+To fix them run 'python manage.py makemigrations --merge'
