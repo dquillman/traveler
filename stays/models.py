@@ -1,5 +1,4 @@
 from django.db import models
-from datetime import date
 from decimal import Decimal
 
 class Stay(models.Model):
@@ -8,8 +7,8 @@ class Stay(models.Model):
 
     # Core info
     park = models.CharField(max_length=200, null=True, blank=True)
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=50)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    state = models.CharField(max_length=50, null=True, blank=True)
 
     # Dates
     check_in = models.DateField(null=True, blank=True)
@@ -17,7 +16,7 @@ class Stay(models.Model):
 
     # Numbers / money
     nights = models.IntegerField(null=True, blank=True)  # (# Nts)
-    rate_per_night = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)  # Rate/nt (Price/Night)
+    rate_per_night = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)  # Price/Night
     total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     fees = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     paid = models.BooleanField(default=False)
@@ -32,12 +31,16 @@ class Stay(models.Model):
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.park or 'Stay'} — {self.city}, {self.state} ({self.check_in} → {self.leave})"
+        bits = [self.park or "Stay"]
+        if self.city: bits.append(self.city)
+        if self.state: bits.append(self.state)
+        return " — ".join(filter(None, [" ".join(bits),
+                                        f"{self.check_in} → {self.leave}" if self.check_in and self.leave else None]))
 
     class Meta:
         ordering = ["-check_in"]
 
-    # Light QoL: auto-fill nights/total if obvious
+    # QoL: auto-calc nights/total if possible
     def save(self, *args, **kwargs):
         try:
             if self.check_in and self.leave:
