@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# Django / SQLite database
+db.sqlite3
+*.sqlite3
+
+# Logs
+*.log
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Archives / Bundles
+*.zip
+*.tar
+*.gz
+*.rar
+
+# IDE configs
+.vscode/
+.idea/
+
+# Migrations cache
+stays/migrations/__pycache__/
+
+# Local settings / notes
+settings_additions.txt
+urls_additions.txt
+name Overnight Fix.txt
