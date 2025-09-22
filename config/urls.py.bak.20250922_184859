@@ -6,11 +6,6 @@ from django.urls import path, include, reverse_lazy
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
-    path('appearance/', stays_views.appearance_view, name='appearance'),
-    path('export/', stays_views.export_view, name='export'),
-    path('import/', stays_views.import_view, name='import'),
-    path('charts/', stays_views.charts_view, name='charts'),
-    path('map/', stays_views.map_view, name='map'),
     
     
     
@@ -24,7 +19,6 @@ urlpatterns = [
 # DEV ONLY: serve uploaded media at /media/
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
 
 
 

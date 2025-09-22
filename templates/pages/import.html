@@ -1,0 +1,25 @@
+﻿{% extends "base.html" %}
+{% block title %}Import · Traveler{% endblock %}
+{% block content %}
+<h1>Import CSV</h1>
+<div class="panel" style="padding:16px;">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <p class="muted">CSV headers: park, city, state, check_in, leave, nights, rate_per_night, total, fees, paid, site, rating, elect_extra, latitude, longitude</p>
+    <input type="file" name="csvfile" accept=".csv" required>
+    <button type="submit" class="button" style="margin-left:8px;">Upload</button>
+  </form>
+</div>
+{% if summary %}
+<div class="panel" style="padding:16px; margin-top:12px;">
+  <strong>Import result:</strong>
+  <p>Created: {{ summary.created }}</p>
+  {% if summary.errors %}
+  <details open>
+    <summary>Errors ({{ summary.errors|length }})</summary>
+    <ul>{% for e in summary.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
