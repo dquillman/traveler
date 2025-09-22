@@ -1,31 +1,18 @@
 
-import os, sys, django
+import sys, json, requests
 
-BASE_DIR = os.getcwd()
-sys.path.append(BASE_DIR)
-
-settings_module = os.environ.get("DJANGO_SETTINGS_MODULE")
-if not settings_module:
-    # naive guess; adjust to your project name if needed
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "traveler.settings")
-
-try:
-    django.setup()
-except Exception as e:
-    print(f"[probe] django.setup failed: {e}")
-    sys.exit(0)
-
-from django.test import Client
-client = Client()
-
-def hit(path):
+def check(url):
     try:
-        resp = client.get(path)
-        print(f"[probe] GET {path} -> {resp.status_code}")
-        return resp.status_code
+        r = requests.get(url, timeout=5)
+        return {"url": url, "status": r.status_code, "ok": r.ok}
     except Exception as e:
-        print(f"[probe] GET {path} exception: {e}")
-        return -1
+        return {"url": url, "error": str(e)}
 
-for p in ["/", "/stays/", "/stays/add/","/static/css/style.css","/media/stays_photos/placeholder.jpg"]:
-    hit(p)
+def main():
+    base = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
+    endpoints = ["/", "/stays/", "/stays/add/"]
+    results = [check(base + ep) for ep in endpoints]
+    print(json.dumps(results, indent=2))
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,23 @@
+[
+  {
+    "model": "stays.stay",
+    "pk": 1,
+    "fields": {
+      "park": "Yosemite Pines",
+      "city": "Groveland",
+      "state": "CA",
+      "check_in": "2025-06-10",
+      "leave": "2025-06-14",
+      "nights": 4,
+      "rate_per_night": "65.00",
+      "total": "260.00",
+      "fees": "15.00",
+      "paid": true,
+      "site": "B12",
+      "rating": 5,
+      "elect_extra": false,
+      "latitude": "37.855500",
+      "longitude": "-120.232000"
+    }
+  }
+]

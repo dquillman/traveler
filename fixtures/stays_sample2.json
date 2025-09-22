@@ -1,0 +1,23 @@
+[
+  {
+    "model": "stays.stay",
+    "pk": 2,
+    "fields": {
+      "park": "Grand Teton",
+      "city": "Moose",
+      "state": "WY",
+      "check_in": "2025-07-02",
+      "leave": "2025-07-05",
+      "nights": 3,
+      "rate_per_night": "80.00",
+      "total": "240.00",
+      "fees": "0.00",
+      "paid": false,
+      "site": "A7",
+      "rating": 4,
+      "elect_extra": true,
+      "latitude": "43.790428",
+      "longitude": "-110.681763"
+    }
+  }
+]
