@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
+{% include "stays/_navbar_hotfix.html" %}
 
 <h1>Stays</h1>
 
@@ -62,8 +63,7 @@
   const map = L.map('map', { scrollWheelZoom: false }).setView([39.5, -98.35], 4);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    attribution: '&copy; OSM & CARTO',
     subdomains: 'abcd',
     maxZoom: 20
   }).addTo(map);
@@ -73,15 +73,7 @@
     {% if s.latitude and s.longitude %}
       (function() {
         const m = L.marker([{{ s.latitude }}, {{ s.longitude }}]).addTo(map)
-          .bindPopup(`
-            <div style="min-width:200px">
-              <strong>{{ s.park|default:"Stay" }}</strong><br>
-              {{ s.city|default:"" }}{% if s.state %}, {{ s.state }}{% endif %}<br>
-              {% if s.check_in %}{{ s.check_in }}{% endif %}{% if s.leave %} → {{ s.leave }}{% endif %}<br>
-              {% if s.rate_per_night is not None %}${{ s.rate_per_night }}/night{% endif %}
-              <br><a href="{% url 'stays:stay_edit' s.id %}">Open / Edit</a>
-            </div>
-          `);
+          .bindPopup(`<strong>{{ s.park|default:"Stay" }}</strong><br>{{ s.city|default:"" }}{% if s.state %}, {{ s.state }}{% endif %}`);
         markers.push(m);
       })();
     {% endif %}
