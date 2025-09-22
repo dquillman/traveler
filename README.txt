@@ -1,22 +1,7 @@
-# Traveler Fixed Bundle (Nav + URLs)
+Been There — Overnight Fix Bundle (with Git Push)
 
-This bundle contains safe replacements for:
-- templates/base.html  (adds banner menu, guards optional links)
-- stays/urls.py        (canonical names: list/add/detail/edit/map/charts)
-- config/urls.py       (root redirect to stays:list; includes stays; admin)
-
-## Install (backup first!)
-
-From your project root (`G:\users\daveq\traveler`):
-
-1) Create backups:
-   - templates\base.html.bak
-   - stays\urls.py.bak
-   - config\urls.py.bak
-
-2) Unzip this bundle into the project root, **overwriting** the three files above.
-
-3) Run:
-   venv\Scripts\python.exe manage.py runserver
-
-If you have custom routes in config/urls.py, re-add them after the include/redirect lines.
+1) Unzip into your Django project root (same folder as manage.py)
+2) Activate your venv
+3) Run:  .\scripts\overnight_fix.ps1
+4) A report is created in ./reports and (if in a Git repo) committed on a new branch and pushed to 'origin'.
+5) Optional: If GitHub CLI 'gh' is installed and logged in, an issue will be created with the report body.

@@ -1,0 +1,9 @@
+/* Fallback dark theme (only used if your style.css was missing) */
+:root{ color-scheme: dark; }
+html,body{ background:#0b1220; color:#e5e7eb; }
+a{ color:#60a5fa; }
+table{ background:transparent; }
+th,td{ border-color:rgba(255,255,255,.12); }
+.card,header,nav,footer{ background:#0f172a; }
+canvas{ background:transparent !important; }
+img{ border-radius:6px; }
