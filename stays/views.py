@@ -12,26 +12,26 @@ class StayForm(ModelForm):
         ]
 
 def stay_list(request):
-    stays = Stay.objects.all().order_by('-check_in')
-    return render(request, 'stays/stay_list.html', {'stays': stays})
+    stays = Stay.objects.all().order_by("-check_in")
+    return render(request, "stays/stay_list.html", {"stays": stays})
 
 def stay_add(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = StayForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            return redirect('stays:list')
+            return redirect("stays:list")
     else:
         form = StayForm()
-    return render(request, 'stays/stay_form.html', {'form': form, 'mode': 'add'})
+    return render(request, "stays/stay_form.html", {"form": form, "mode": "add"})
 
 def stay_edit(request, pk):
     stay = get_object_or_404(Stay, pk=pk)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = StayForm(request.POST, request.FILES, instance=stay)
         if form.is_valid():
             form.save()
-            return redirect('stays:list')
+            return redirect("stays:list")
     else:
         form = StayForm(instance=stay)
-    return render(request, 'stays/stay_form.html', {'form': form, 'mode': 'edit', 'stay': stay})
+    return render(request, "stays/stay_form.html", {"form": form, "mode": "edit", "stay": stay})

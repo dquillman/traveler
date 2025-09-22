@@ -1,8 +1,6 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 {% block content %}
-{% include "stays/_navbar_hotfix.html" %}
-
 <h1>{% if mode == 'edit' %}Edit Stay{% else %}Add Stay{% endif %}</h1>
 <div class="panel" style="padding:16px;">
   <form method="post" enctype="multipart/form-data">
@@ -17,3 +15,4 @@
   </form>
 </div>
 {% endblock %}
+
