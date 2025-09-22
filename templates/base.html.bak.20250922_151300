@@ -12,7 +12,6 @@
   <link rel="stylesheet" href="{% static 'css/site_dark_theme.css' %}">
 </head>
 <body>
-{% include "_includes/navbar.html" %}
   <header class="navbar">
     <div class="container" style="padding:10px 16px;">Traveler</div>
   </header>
@@ -30,7 +29,4 @@
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </body>
 </html>
-
-
-
 
