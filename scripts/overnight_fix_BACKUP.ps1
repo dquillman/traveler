@@ -1,4 +1,4 @@
-﻿# ================= Been There: Overnight Fix (Unattended + Git Push) =================
+# ================= Been There: Overnight Fix (Unattended + Git Push) =================
 # Run from your Django project root (same folder as manage.py)
 # Usage (with venv active):  .\scripts\overnight_fix.ps1
 $ErrorActionPreference = "Stop"
@@ -32,7 +32,7 @@ Write-Step "Preparing report file"
 $reports = Join-Path (Get-Location) "reports"
 if (-not (Test-Path $reports)) { New-Item -ItemType Directory -Path $reports | Out-Null }
 $Global:ReportPath = Join-Path $reports ("overnight_report_{0}.txt" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
-Append-Report "Been There â€" Overnight Fix Report"
+Append-Report "Been There — Overnight Fix Report"
 Append-Report ("Timestamp: {0}" -f (Get-Date))
 Append-Report "================================================================"
 
@@ -49,18 +49,7 @@ function Run-And-Log($label, $scriptBlock){
 # 2) Verify basic deps
 Run-And-Log "Verifying/installing core dependencies" {
   pip show Django | Out-Null
-# Ensure Django is available in the venv (PowerShell-safe)
-\ = Join-Path \G:\users\daveq\traveler\.venv 'Scripts\pip.exe'
-if (-not (Test-Path \)) { \ = '.\.venv\Scripts\pip.exe' }
-
-if (\1 -ne 0 -or -not (Get-Command django-admin -ErrorAction SilentlyContinue)) {
-  if (Test-Path \) {
-    & \ install 'Django>=4.2,<6.0' | Out-Null
-  } else {
-    Write-Host "pip not found in venv; trying python -m pip..." -ForegroundColor Yellow
-    & python -m pip install 'Django>=4.2,<6.0' | Out-Null
-  }
-}
+  if ($LASTEXITCODE -ne 0) { pip install "Django>=4.2,<6.0" | Out-Null }
   pip show pillow | Out-Null
   if ($LASTEXITCODE -ne 0) { pip install pillow | Out-Null }
 }
@@ -137,13 +126,9 @@ if ($IsGitRepo) {
     }
   }
 } else {
-Write-Host "(No remote repo detected - report saved locally only.)" -ForegroundColor Yellow
+  Write-Host "`n(No Git repo detected — report saved locally only.)" -ForegroundColor Yellow
 }
 
 Write-Step "Done. Report at: $Global:ReportPath"
-Write-Host 'If you pushed to GitHub, share the branch or issue link with me.'
+Write-Host "If you pushed to GitHub, share the branch or issue link with me."
 # ===========================================================================
-
-
-
-
