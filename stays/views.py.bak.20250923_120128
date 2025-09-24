@@ -1,0 +1,48 @@
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.urls import reverse
+from django.db.models import Count
+from .models import Stay
+
+def stays_map_data(request):
+    items = []
+    for s in Stay.objects.all():
+        lat = getattr(s, "latitude", None)
+        lng = getattr(s, "longitude", None)
+        try:
+            lat = float(lat) if lat is not None else None
+            lng = float(lng) if lng is not None else None
+        except (TypeError, ValueError):
+            lat = None
+            lng = None
+        items.append({
+            "id": s.id,
+            "label": s.label or "",
+            "latitude": lat,
+            "longitude": lng,
+            "popup_html": f"<strong>{s.label or 'Stay'}</strong><br>{(s.city or '')}, {(s.state or '')}",
+            "detail_url": reverse("stay_edit", args=[s.id]),
+        })
+    return JsonResponse({"stays": items})
+
+def stays_charts(request):
+    qs = (Stay.objects
+          .values('state')
+          .annotate(count=Count('id'))
+          .order_by('state'))
+    labels = [x['state'] or 'â€”' for x in qs]
+    counts = [x['count'] for x in qs]
+    return render(request, "stays/charts.html", {"labels": labels, "counts": counts})
+
+def stays_import(request):
+    return render(request, "stays/import.html", {})
+
+def stays_export(request):
+    return render(request, "stays/export.html", {})
+
+# The following are expected to already exist in your app:
+#   stay_list, stay_add, stay_edit (used by urls above)
+# If they don't, your app will tell you on server start.
+
+def appearance(request):
+    return render(request, "appearance.html", {})

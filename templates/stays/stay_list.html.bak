@@ -1,0 +1,1 @@
+var mapDataUrl = "{% url 'stays:stays_map_data' %}";

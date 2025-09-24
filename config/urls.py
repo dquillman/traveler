@@ -1,34 +1,18 @@
-﻿from stays import views as stays_views
-from django.conf.urls.static import static
-from django.conf import settings
-from django.contrib import admin
-from django.urls import path, include, reverse_lazy
+﻿from django.contrib import admin
+from django.urls import path, include
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
-    path('appearance/', stays_views.appearance_view, name='appearance'),
-    path('export/', stays_views.export_view, name='export'),
-    path('import/', stays_views.import_view, name='import'),
-    path('charts/', stays_views.charts_view, name='charts'),
-    path('map/', stays_views.map_view, name='map'),
-    
-    
-    
-    
-    
-    path('', RedirectView.as_view(url=reverse_lazy('stays:list'), permanent=False)),
-    path('stays/', include(('stays.urls', 'stays'), namespace='stays')),
-    path('admin/', admin.site.urls),
+    path('appearance/', RedirectView.as_view(url='/stays/appearance/', permanent=False)),
+    path('', RedirectView.as_view(url='/stays/', permanent=False)),
+    # Root redirects to the map
+
+    # Optional alias so /map/ works too
+
+    # App routes
+    path("stays/", include(("stays.urls", "stays"), namespace="stays")),
+    path("admin/", admin.site.urls),
 ]
-
-# DEV ONLY: serve uploaded media at /media/
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
-
-
-
 
 
 

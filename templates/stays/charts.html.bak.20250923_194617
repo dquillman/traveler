@@ -1,0 +1,33 @@
+﻿{% load static %}
+<!doctype html><meta charset="utf-8">
+<title>Traveler â€¢ Charts</title>
+<style>
+:root{--bg:#0f1220;--card:#161a2b;--ink:#e8ebff;--muted:#9aa4d2;--line:#272b41;--accent:#b9c6ff}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);padding:16px;min-height:520px}
+</style>
+<div class="wrap">
+  <div class="panel">
+    <h1>Charts</h1>
+    <canvas id="nightsByState" style="width:100%; height:420px;"></canvas>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(async function(){
+  const res = await fetch("{% url 'stays_chart_data' %}", {headers: {'X-Requested-With':'fetch'}});
+  const payload = await res.json();
+  const ctx = document.getElementById('nightsByState').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: { labels: payload.labels, datasets: payload.datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: true } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+})();
+</script>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traveler • Export Stays</title>
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <style>
+    :root { --bg:#0f1220; --card:#161a2b; --ink:#e8ebff; --muted:#9aa4d2; --line:#272b41; --accent:#b9c6ff; }
+    *{box-sizing:border-box}
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; margin:0; background:var(--bg); color:var(--ink); }
+    header { padding:14px 18px; background:#101425; color:#fff; display:flex; align-items:center; gap:16px; }
+    header .brand { font-weight:700; }
+    header nav a { color:var(--accent); text-decoration:none; margin-right:14px; }
+    .wrap { max-width:800px; margin:0 auto; padding:16px; }
+    .card { background:var(--card); padding:16px; border:1px solid var(--line); border-radius:8px; }
+    a.button { display:inline-block; padding:8px 12px; border-radius:6px; background:#4f7cff; color:#fff; text-decoration:none; }
+    p.muted { color:var(--muted); font-size:0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Traveler</div>
+    <nav>
+      <a href="/stays/">Stays</a>
+      <a href="/stays/add/">Add</a>
+      <a href="/stays/map/">Map</a>
+      <a href="/stays/charts/">Charts</a>
+      <a href="/stays/import/">Import</a>
+      <a href="/stays/export/">Export</a>
+      <a href="/appearance/">Appearance</a>
+    </nav>
+  </header>
+  <div class="wrap">
+    <h1>Export Stays</h1>
+    <p class="muted">Click the button below to download all stays as a CSV file.</p>
+    <div class="card">
+      <a href="/stays/export/?download=1" class="button">Download CSV</a>
+    </div>
+  </div>
+</body>
+</html>

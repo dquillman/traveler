@@ -1,0 +1,39 @@
+@'
+from stays.models import Stay
+from django.db import transaction
+
+# A few spread-out coordinates (lat, lng)
+COORDS = [
+    (44.0805, -103.2310),  # Rapid City, SD
+    (46.7867,  -92.1005),  # Duluth, MN
+    (39.7392, -104.9903),  # Denver, CO
+    (36.1627,  -86.7816),  # Nashville, TN
+    (33.4484, -112.0740),  # Phoenix, AZ
+    (47.6062, -122.3321),  # Seattle, WA
+    (37.7749, -122.4194),  # San Francisco, CA
+    (32.7767,  -96.7970),  # Dallas, TX
+    (41.8781,  -87.6298),  # Chicago, IL
+    (40.7608, -111.8910),  # Salt Lake City, UT
+]
+
+def dump(msg): 
+    print(f"[seed_pins] {msg}")
+
+@transaction.atomic
+def run():
+    qs = Stay.objects.filter(latitude__isnull=True)[:len(COORDS)]
+    if not qs:
+        dump("No stays missing latitude/longitude. Nothing to do.")
+        return
+
+    updated = 0
+    for (lat, lng), s in zip(COORDS, qs):
+        s.latitude = lat
+        s.longitude = lng
+        s.save(update_fields=["latitude", "longitude"])
+        dump(f"Updated Stay id={s.id} -> lat={lat}, lng={lng}")
+        updated += 1
+
+    dump(f"Done. Updated: {updated}")
+'@ | Set-Content -Path .\scripts\seed_pins.py -Encoding UTF8
+scripts\seed_pins.py -Encoding UTF8

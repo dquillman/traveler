@@ -1,0 +1,74 @@
+﻿from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render
+from django.urls import reverse, NoReverseMatch
+from .models import Stay
+
+def _apply_filters(request, qs):
+    state = (request.GET.get('state') or '').strip()
+    stars = (request.GET.get('stars') or '').strip()
+    if state:
+        qs = qs.filter(state__iexact=state)
+    if stars:
+        try:
+            s = int(stars)
+            if 1 <= s <= 5:
+                qs = qs.filter(rating=s)
+        except ValueError:
+            pass
+    return qs
+
+def stay_list(request):
+    qs = _apply_filters(request, Stay.objects.all()).order_by('-check_in', '-id')
+    states = (Stay.objects.exclude(state__isnull=True).exclude(state='')
+              .values_list('state', flat=True).distinct().order_by('state'))
+    stars_options = [5,4,3,2,1]
+    return render(request, 'stays/stay_list.html', {
+        'stays': qs,
+        'states': states,
+        'stars_options': stars_options,
+        'selected_state': request.GET.get('state', ''),
+        'selected_stars': request.GET.get('stars', ''),
+    })
+
+def _detail_url_for(s):
+    for name in ('stay_edit','stay_detail'):
+        try:
+            return reverse(name, args=[s.id])
+        except NoReverseMatch:
+            continue
+    return ''
+
+def stays_map_data(request):
+    qs = _apply_filters(request,
+        Stay.objects.exclude(latitude__isnull=True).exclude(longitude__isnull=True))
+    data = []
+    for s in qs:
+        data.append({
+            'id': s.id,
+            'park': getattr(s,'park','') or getattr(s,'name','') or 'Stay',
+            'city': getattr(s,'city','') or '',
+            'state': (s.state or '').upper(),
+            'rating': s.rating or 0,
+            'check_in': s.check_in.isoformat() if getattr(s,'check_in',None) else '',
+            'lat': s.latitude,
+            'lng': s.longitude,
+            'detail_url': _detail_url_for(s),
+        })
+    return JsonResponse({'stays': data})
+
+def appearance_view(request):
+    # Simple stub so /appearance/ route works. Replace with a template render if desired.
+    return HttpResponse("Appearance settings page (stub).")
+
+def export_view(request):
+    return HttpResponse("export_view page (stub).")
+
+def import_view(request):
+    return HttpResponse("import_view page (stub).")
+
+def charts_view(request):
+    return HttpResponse("charts_view page (stub).")
+
+def map_view(request):
+    return HttpResponse("map_view page (stub).")
+

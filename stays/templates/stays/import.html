@@ -1,14 +1,52 @@
-﻿{% extends "base.html" %}
-{% block title %}Import Stays (CSV){% endblock %}
-{% block content %}
-  <div class="card">
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traveler • Import Stays</title>
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <style>
+    :root { --bg:#0f1220; --card:#161a2b; --ink:#e8ebff; --muted:#9aa4d2; --line:#272b41; --accent:#b9c6ff; }
+    *{box-sizing:border-box}
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; margin:0; background:var(--bg); color:var(--ink); }
+    header { padding:14px 18px; background:#101425; color:#fff; display:flex; align-items:center; gap:16px; }
+    header .brand { font-weight:700; }
+    header nav a { color:var(--accent); text-decoration:none; margin-right:14px; }
+    .wrap { max-width:800px; margin:0 auto; padding:16px; }
+    form { background:var(--card); padding:16px; border:1px solid var(--line); border-radius:8px; }
+    label { display:block; margin-bottom:8px; }
+    input[type="file"] { margin-bottom:12px; }
+    button { padding:8px 12px; border:none; border-radius:6px; background:#4f7cff; color:#fff; cursor:pointer; }
+    p.muted { color:var(--muted); font-size:0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Traveler</div>
+    <nav>
+      <a href="/stays/">Stays</a>
+      <a href="/stays/add/">Add</a>
+      <a href="/stays/map/">Map</a>
+      <a href="/stays/charts/">Charts</a>
+      <a href="/stays/import/">Import</a>
+      <a href="/stays/export/">Export</a>
+      <a href="/appearance/">Appearance</a>
+    </nav>
+  </header>
+  <div class="wrap">
     <h1>Import Stays</h1>
+    <p class="muted">Upload a CSV file with columns: <code>park, city, state, rating, latitude, longitude</code></p>
+    {% if messages %}
+      {% for message in messages %}
+        <p class="{{ message.tags }}">{{ message }}</p>
+      {% endfor %}
+    {% endif %}
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
-      <p><input type="file" name="file" accept=".csv" required></p>
-      <div class="actions"><button type="submit" class="btn">Upload & Import</button></div>
+      <label for="id_file">CSV file:</label>
+      <input type="file" name="file" id="id_file" required>
+      <button type="submit">Import</button>
     </form>
-    <p class="muted" style="margin-top:8px">Preferred headers: <code>Park, City, State, Check in, Leave, #Nts, Rate/nt, Total, Fees, Paid?, Site, Notes</code>. Legacy <code>City/St</code> still supported.</p>
   </div>
-{% endblock %}
-
+</body>
+</html>

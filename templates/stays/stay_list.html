@@ -1,89 +1,68 @@
-﻿{% extends "base.html" %}
-{% load static %}
-{% block content %}
-<h1>Stays</h1>
-
-
-
-<div class="panel" style="padding:0;">
-  <table>
-    <thead>
-      <tr>
-        <th>Photo</th>
-        <th>Park</th>
-        <th>City</th>
-        <th>State</th>
-        <th>Check in</th>
-        <th>Leave</th>
-        <th># Nts</th>
-        <th>Rate/nt</th>
-        <th>Total</th>
-        <th>Fees</th>
-        <th>Paid?</th>
-        <th>Site</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for s in stays %}
-      <tr>
-        <td>
-          {% if s.photo %}
-            <img src="{{ s.photo.url }}" alt="" style="height:48px;width:auto;border-radius:6px;">
-          {% else %}—{% endif %}
-        </td>
-        <td>{{ s.park|default:"—" }}</td>
-        <td>{{ s.city|default:"—" }}</td>
-        <td>{{ s.state|default:"—" }}</td>
-        <td>{{ s.check_in|default:"—" }}</td>
-        <td>{{ s.leave|default:"—" }}</td>
-        <td>{{ s.nights|default:"—" }}</td>
-        <td>{% if s.rate_per_night is not None %}${{ s.rate_per_night }}{% else %}—{% endif %}</td>
-        <td>{% if s.total is not None %}${{ s.total }}{% else %}—{% endif %}</td>
-        <td>{% if s.fees is not None %}${{ s.fees }}{% else %}—{% endif %}</td>
-        <td>{{ s.paid|yesno:"Yes,No" }}</td>
-        <td>{{ s.site|default:"—" }}</td>
-        <td><a href="{% url 'stays:stay_edit' s.id %}">Open / Edit</a></td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="13" style="text-align:center;padding:16px;">No stays yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <div style="padding:12px;">
-    <a class="button" href="{% url 'stays:add' %}">Add Stay</a>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traveler • Stays</title>
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <style>
+    :root { --bg:#0f1220; --card:#161a2b; --ink:#e8ebff; --muted:#9aa4d2; --line:#272b41; --accent:#b9c6ff; }
+    *{box-sizing:border-box}
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; margin:0; background:var(--bg); color:var(--ink); }
+    header { padding:14px 18px; background:#101425; color:#fff; display:flex; align-items:center; gap:16px; }
+    header .brand { font-weight:700; }
+    header nav a { color:var(--accent); text-decoration:none; margin-right:14px; }
+    .wrap { max-width:1200px; margin:0 auto; padding:16px; }
+    table { width:100%; border-collapse:collapse; background:var(--card); border-radius:14px; overflow:hidden; border:1px solid var(--line); margin-top:16px; }
+    th, td { padding:10px 12px; border-bottom:1px solid var(--line); }
+    th { text-align:left; color:var(--muted); font-weight:600; background:#12162a; }
+    td a { color: var(--accent); text-decoration: none; }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Traveler</div>
+    <nav>
+      <a href="/stays/">Stays</a>
+      <a href="/stays/add/">Add</a>
+      <a href="/stays/charts/">Charts</a>
+      <a href="/stays/import/">Import</a>
+      <a href="/stays/export/">Export</a>
+      <a href="/appearance/">Appearance</a>
+    </nav>
+  </header>
+  <div class="wrap">
+    <h1>Stays</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Park</th>
+          <th>City</th>
+          <th>State</th>
+          <th>Rating</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stay in stays %}
+        <tr>
+          <td>{{ stay.park|default:"Stay "|add:stay.pk }}</td>
+          <td>{{ stay.city }}</td>
+          <td>{{ stay.state }}</td>
+          <td>{{ stay.rating }}</td>
+          <td>
+            <a href="{% url 'stays:detail' stay.pk %}">View</a> |
+            <a href="{% url 'stays:edit' stay.pk %}">Edit</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="muted">No stays found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-</div>
-
-<script>
-  const map = L.map('map', { scrollWheelZoom: false }).setView([39.5, -98.35], 4);
-
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OSM & CARTO',
-    subdomains: 'abcd',
-    maxZoom: 20
-  }).addTo(map);
-
-  const markers = [];
-  {% for s in stays %}
-    {% if s.latitude and s.longitude %}
-      (function() {
-        const m = L.marker([{{ s.latitude }}, {{ s.longitude }}]).addTo(map)
-          .bindPopup(`<strong>{{ s.park|default:"Stay" }}</strong><br>{{ s.city|default:"" }}{% if s.state %}, {{ s.state }}{% endif %}`);
-        markers.push(m);
-      })();
-    {% endif %}
-  {% endfor %}
-
-  if (markers.length) {
-    const group = L.featureGroup(markers);
-    map.fitBounds(group.getBounds().pad(0.2));
-  }
-</script>
-
-{% endblock %}
-
-
-
-
-
+</body>
+</html>

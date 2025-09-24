@@ -1,65 +1,114 @@
-{% extends 'base.html' %}
-{% block title %}Stays Charts{% endblock %}
-{% block content %}
-<div class="container mx-auto px-4 py-6">
-  <h1 class="text-2xl font-semibold mb-4">Stays Charts</h1>
-  <p class="mb-4"><a class="btn" href="{% url 'stays:list' %}">Back to list</a></p>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-    <div>
-      <h2 class="font-medium mb-2">Stays by State</h2>
-      <canvas id="byState"></canvas>
-    </div>
-
-    <div>
-      <h2 class="font-medium mb-2">Stays by Year</h2>
-      {% if has_years %}
-        <canvas id="byYear"></canvas>
-      {% else %}
-        <div class="opacity-70">No date field detected; skipping year chart.</div>
-      {% endif %}
-    </div>
-
-    <div class="lg:col-span-2">
-      <h2 class="font-medium mb-2">Rating Distribution</h2>
-      {% if has_rating %}
-        <canvas id="ratingDist"></canvas>
-      {% else %}
-        <div class="opacity-70">No rating field detected; skipping rating chart.</div>
-      {% endif %}
-    </div>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traveler • Charts</title>
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <style>
+    :root { --bg:#0f1220; --card:#161a2b; --ink:#e8ebff; --muted:#9aa4d2; --line:#272b41; --accent:#b9c6ff; }
+    *{box-sizing:border-box}
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; margin:0; background:var(--bg); color:var(--ink); }
+    header { padding:14px 18px; background:#101425; color:#fff; display:flex; align-items:center; gap:16px; }
+    header .brand { font-weight:700; }
+    header nav a { color:var(--accent); text-decoration:none; margin-right:14px; }
+    .wrap { max-width:1200px; margin:0 auto; padding:16px; }
+    canvas { width:100%; max-width:600px; height:300px; margin-bottom:32px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Traveler</div>
+    <nav>
+      <a href="/stays/">Stays</a>
+      <a href="/stays/add/">Add</a>
+      <a href="/stays/map/">Map</a>
+      <a href="/stays/charts/">Charts</a>
+      <a href="/stays/import/">Import</a>
+      <a href="/stays/export/">Export</a>
+      <a href="/appearance/">Appearance</a>
+    </nav>
+  </header>
+  <div class="wrap">
+    <h1>Stay Charts</h1>
+    <canvas id="stateChart"></canvas>
+    {% if has_years %}
+    <canvas id="yearChart"></canvas>
+    {% endif %}
+    {% if has_rating %}
+    <canvas id="ratingChart"></canvas>
+    {% endif %}
   </div>
-</div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Data passed from view
+    const states = JSON.parse({{ states|safe }});
+    const statesSeries = JSON.parse({{ states_series|safe }});
+    const years = JSON.parse({{ years_labels|safe }});
+    const yearsSeries = JSON.parse({{ years_series|safe }});
+    const ratingLabels = JSON.parse({{ rating_labels|safe }});
+    const ratingSeries = JSON.parse({{ rating_series|safe }});
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script>
-  const states       = {{ states|safe }};
-  const statesSeries = {{ states_series|safe }};
-  const yearsLabels  = {{ years_labels|safe }};
-  const yearsSeries  = {{ years_series|safe }};
-  const ratingLabels = {{ rating_labels|safe }};
-  const ratingSeries = {{ rating_series|safe }};
-
-  new Chart(document.getElementById('byState'), {
-    type: 'bar',
-    data: { labels: states, datasets: [{ label: 'Stays', data: statesSeries }] },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { autoSkip: true }} } }
-  });
-
-  if (yearsLabels.length) {
-    new Chart(document.getElementById('byYear'), {
-      type: 'line',
-      data: { labels: yearsLabels, datasets: [{ label: 'Stays per Year', data: yearsSeries }] },
-      options: { responsive: true }
-    });
-  }
-
-  if (ratingLabels.length) {
-    new Chart(document.getElementById('ratingDist'), {
+    // State chart
+    new Chart(document.getElementById('stateChart'), {
       type: 'bar',
-      data: { labels: ratingLabels, datasets: [{ label: 'Count', data: ratingSeries }] },
-      options: { responsive: true, plugins: { legend: { display: false } } }
+      data: {
+        labels: states,
+        datasets: [{
+          label: 'Stays by State',
+          data: statesSeries,
+          backgroundColor: '#4f7cff'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
     });
-  }
-</script>
-{% endblock %}
+
+    // Year chart (if any)
+    {% if has_years %}
+    new Chart(document.getElementById('yearChart'), {
+      type: 'bar',
+      data: {
+        labels: years,
+        datasets: [{
+          label: 'Stays by Year',
+          data: yearsSeries,
+          backgroundColor: '#ffaa33'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+    {% endif %}
+
+    // Rating chart (if any)
+    {% if has_rating %}
+    new Chart(document.getElementById('ratingChart'), {
+      type: 'bar',
+      data: {
+        labels: ratingLabels,
+        datasets: [{
+          label: 'Stays by Rating',
+          data: ratingSeries,
+          backgroundColor: '#33c48b'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+    {% endif %}
+  </script>
+</body>
+</html>

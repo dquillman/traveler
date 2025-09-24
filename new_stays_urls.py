@@ -1,0 +1,15 @@
+from django.urls import path
+from . import views
+
+app_name = 'stays'
+
+urlpatterns = [
+    path('', views.stay_list, name='list'),
+    path('add/', views.stay_add, name='add'),
+    path('<int:pk>/', views.stay_detail, name='detail'),
+    path('<int:pk>/edit/', views.stay_edit, name='edit'),
+    path('charts/', views.stay_charts, name='charts'),
+    path('import/', views.import_view, name='import'),
+    path('export/', views.export_view, name='export'),
+    path('map-data/', views.stays_map_data, name='map_data'),
+]

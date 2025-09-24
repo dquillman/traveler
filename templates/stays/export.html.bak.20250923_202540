@@ -1,0 +1,27 @@
+﻿{% load static %}
+<!doctype html><meta charset="utf-8"><title>Traveler â€¢ Export</title>
+<style>:root{--bg:#0f1220;--card:#161a2b;--ink:#e8ebff;--muted:#9aa4d2;--line:#272b41;--accent:#b9c6ff}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);padding:16px}
+.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+.card{background:#12162a;border:1px solid var(--line);border-radius:12px;padding:14px}
+a.button{display:inline-block;padding:10px 14px;border:1px solid var(--accent);border-radius:10px;text-decoration:none;color:var(--ink)}
+a.button:hover{background:rgba(185,198,255,.08)}.small{font-size:.9rem}
+.kv{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.kv span{background:#0e1330;border:1px solid var(--line);border-radius:8px;padding:6px 8px}</style>
+<div class="wrap"><div class="panel">
+  <h1>Export</h1>
+  <p class="muted small">Download your data as CSV. Use the year filter if you want a slice.</p>
+  <div class="kv"><span>Total stays: <strong>{{ total }}</strong></span><span>This year ({{ current_year }}): <strong>{{ this_year }}</strong></span></div>
+  <div class="grid">
+    <div class="card"><h3>All Stays (CSV)</h3><p class="muted small">Everything in one file.</p><a class="button" href="{% url 'stays:stays_export_csv' %}">Download CSV</a></div>
+    <div class="card"><h3>Current Year (CSV)</h3><p class="muted small">Only {{ current_year }} records.</p><a class="button" href="{% url 'stays:stays_export_csv' %}?year={{ current_year }}">Download {{ current_year }}</a></div>
+    <div class="card"><h3>Pick a Year</h3>
+      <form method="get" action="{% url 'stays:stays_export_csv' %}">
+        <label for="year" class="small muted">Year</label><br>
+        <input id="year" name="year" type="number" min="1990" max="2099" step="1" style="margin:8px 0;padding:8px;border-radius:8px;border:1px solid var(--line);background:#0e1330;color:var(--ink)">
+        <br><button class="button" type="submit">Download CSV</button>
+      </form>
+    </div>
+  </div>
+</div></div>

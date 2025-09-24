@@ -1,7 +1,16 @@
-Been There — Overnight Fix Bundle (with Git Push)
+Traveler immediate fix — files included
+=======================================
 
-1) Unzip into your Django project root (same folder as manage.py)
-2) Activate your venv
-3) Run:  .\scripts\overnight_fix.ps1
-4) A report is created in ./reports and (if in a Git repo) committed on a new branch and pushed to 'origin'.
-5) Optional: If GitHub CLI 'gh' is installed and logged in, an issue will be created with the report body.
+Files:
+- templates_stays_stay_list.html  -> replace templates/stays/stay_list.html
+- stays_views_stays_map_data.py   -> paste into stays/views.py (overwrites stays_map_data)
+- install_traveler_fix.ps1        -> installer that backs up and writes these files
+
+Quick install (PowerShell):
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+  .\install_traveler_fix.ps1 -Repo "G:\users\daveq\traveler"
+
+Sanity check:
+  python manage.py shell -c "from django.urls import reverse; print(reverse('stays:stays_map_data'))"
+  # Expect: /stays/map-data/
+  python manage.py runserver

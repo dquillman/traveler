@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Traveler</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    body {margin:0;font-family:sans-serif;background:#f9fafb;color:#111}
+    .nav {display:flex;gap:1rem;padding:1rem;background:#1e293b;color:white;align-items:center}
+    .nav a {color:white;text-decoration:none;font-weight:500}
+    .nav a:hover {text-decoration:underline}
+    .spacer {flex-grow:1}
+    .brand {font-size:1.2rem;font-weight:bold}
+    .grid-2 {display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .grid-3 {display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+    th {position:sticky;top:70px;background:#f9fafb}
+    @media (max-width:820px){.grid-2,.grid-3{grid-template-columns:1fr}th{top:100px}}
+    .badge{display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px}
+    .badge-ok{background:#052e2b;color:#22d3ee;border-color:#0b5257}
+    .badge-no{background:#221515;color:#fca5a5;border-color:#7f1d1d}
+    .thumb{width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <a class="brand" href="{% url 'stays:list' %}">Traveler</a>
+      <a href="{% url 'stays:list' %}">Stays</a>
+      <a href="{% url 'stays:add' %}">Add</a>
+      <a href="{% url 'stays:map' %}">Map</a>
+      <a href="{% url 'stays:charts' %}">Charts</a>
+      {% url 'import_stays_csv' as import_url %}{% if import_url %}<a href="{{ import_url }}">Import</a>{% endif %}
+      {% url 'export_stays_csv' as export_url %}{% if export_url %}<a href="{{ export_url }}">Export</a>{% endif %}
+      {% url 'appearance_edit' as appearance_url %}{% if appearance_url %}<a href="{{ appearance_url }}">Appearance</a>{% endif %}
+      <span class="spacer"></span>
+    </div>
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

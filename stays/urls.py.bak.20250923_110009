@@ -1,0 +1,10 @@
+﻿from django.urls import path
+from . import views
+
+app_name = 'stays'
+
+urlpatterns = [
+    path('', views.stay_list, name='stay_list'),
+    path('stays/', views.stay_list, name='list'),  # alias for reverse('list')
+    path('map-data/', views.stays_map_data, name='stays_map_data'),
+]

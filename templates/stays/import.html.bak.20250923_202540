@@ -1,0 +1,17 @@
+﻿<!doctype html><meta charset="utf-8"><title>Traveler â€¢ Import</title>
+<style>:root{--bg:#0f1220;--card:#161a2b;--ink:#e8ebff;--muted:#9aa4d2;--line:#272b41;--accent:#b9c6ff}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+.wrap{max-width:900px;margin:0 auto;padding:16px}.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);padding:16px}
+label{display:block;margin:10px 0 6px}input[type="file"]{padding:10px;border-radius:10px;border:1px solid var(--line);background:#0e1330;color:var(--ink);width:100%}
+button{margin-top:12px;padding:10px 14px;border:1px solid var(--accent);border-radius:10px;background:transparent;color:var(--ink)}
+button:hover{background:rgba(185,198,255,.08)}.small{color:var(--muted)}</style>
+<div class="wrap"><div class="panel">
+  <h1>Import Stays (CSV)</h1>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label for="file">CSV file</label>
+    <input id="file" type="file" name="file" accept=".csv">
+    <button type="submit">Import</button>
+  </form>
+  <p class="small" style="margin-top:14px">Headers accepted (case-insensitive): <code>Park, City, State, Check In, Leave, Nights, Rate/Nt, Price/Night, Paid?</code></p>
+</div></div>
