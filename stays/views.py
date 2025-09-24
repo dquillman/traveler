@@ -1,4 +1,4 @@
-from .models import Stay
+﻿from .models import Stay
 from django.shortcuts import redirect
 from django.db.models import Sum, Count
 from .forms import StayImportForm
@@ -349,7 +349,7 @@ def stays_chart_data(request):
                 .values('state')
                 .annotate(nights=Sum('nights'), count=Count('id'))
                 .order_by('state'))
-    labels = [r['state'] or '—' for r in qs]
+    labels = [r['state'] or 'â€”' for r in qs]
     data = [int(r['nights'] or 0) for r in qs]
     return JsonResponse({'labels': labels, 'datasets': [{'label': 'Nights', 'data': data}]})
 
@@ -403,7 +403,7 @@ def import_stays(request):
 
                 obj, is_created = Stay.objects.update_or_create(
                     park=park, city=city, state=state, check_in=check_in, leave=leave,
-                    defaults={'nights': nights, 'rate_per_night': rate, 'price_per_night': price, 'paid': paid}
+                    defaults={'nights': nights, 'rate_per_night': rate,'paid': paid}
                 )
                 created += int(is_created)
                 updated += int(not is_created)
@@ -417,5 +417,6 @@ def import_stays(request):
 def appearance_page(request):
     # keep it simple; renders a template that includes a top nav
     return render(request, 'stays/appearance.html')
+
 
 
