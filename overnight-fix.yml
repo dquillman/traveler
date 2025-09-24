@@ -1,0 +1,145 @@
+name: Overnight Fix
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "30 3 * * *"   # 03:30 UTC nightly
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  fix:
+    runs-on: windows-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install "Django>=4.2,<6.0" pillow
+
+      - name: Apply placeholder patch + checks + report
+        shell: pwsh
+        run: |
+          # write a tiny patch script
+          Set-Content -Path patch-placeholder.ps1 -Value @"
+$ErrorActionPreference = "Stop"
+function Ensure-Dir($p){ if(-not(Test-Path $p)){ New-Item -ItemType Directory -Path $p | Out-Null } }
+if(-not(Test-Path ".\manage.py")){ throw "Run from project root." }
+
+$settings = Get-ChildItem -Recurse -Filter "settings.py" | Where-Object { $_.FullName -notmatch '\\venv\\|\.venv\\' } | Select-Object -First 1
+$projectUrls = Get-ChildItem -Recurse -Filter "urls.py" | Where-Object { $_.FullName -notmatch '\\venv\\|\.venv\\' -and (Get-Content $_.FullName) -match 'urlpatterns\s*=' } | Select-Object -First 1
+
+$st = Get-Content $settings.FullName -Raw
+if($st -notmatch 'MEDIA_URL\s*='){
+  $st = $st.TrimEnd()+"`r`n`r`nMEDIA_URL = ""/media/""`r`nMEDIA_ROOT = BASE_DIR / ""media""`r`n"
+  Set-Content $settings.FullName $st -Encoding UTF8
+}
+
+$u = Get-Content $projectUrls.FullName -Raw
+if($u -notmatch 'from django\.conf import settings'){ $u = "from django.conf import settings`r`n"+$u }
+if($u -notmatch 'from django\.conf\.urls\.static import static'){ $u = "from django.conf.urls.static import static`r`n"+$u }
+if($u -notmatch 'urlpatterns\s*\+\=\s*static\(settings\.MEDIA_URL'){
+  $u = $u.TrimEnd()+"`r`nif settings.DEBUG:`r`n    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)`r`n"
+}
+Set-Content $projectUrls.FullName $u -Encoding UTF8
+
+$stays = Join-Path (Get-Location) "stays"
+$apps = Join-Path $stays "apps.py"
+$utils = Join-Path $stays "utils"; Ensure-Dir $utils
+$place = Join-Path $utils "placeholders.py"
+
+Set-Content $apps @"
+from django.apps import AppConfig
+class StaysConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "stays"
+    def ready(self):
+        try:
+            from .utils.placeholders import ensure_placeholder_image
+            ensure_placeholder_image()
+        except Exception:
+            pass
+"@
+
+Set-Content $place @"
+from pathlib import Path
+from django.conf import settings
+def ensure_placeholder_image():
+    try:
+        from PIL import Image, ImageDraw
+    except Exception:
+        return
+    d = Path(settings.MEDIA_ROOT) / "stays_photos"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "placeholder.jpg"
+    if p.exists(): return
+    from PIL import Image, ImageDraw
+    img = Image.new("RGB",(400,300),(13,19,33))
+    draw = ImageDraw.Draw(img)
+    text = "No Photo"
+    w = draw.textlength(text); h = 16
+    draw.text(((400-w)/2,(300-h)/2), text, fill=(224,231,255))
+    img.save(p, "JPEG", quality=88)
+"@
+
+$models = Join-Path $stays "models.py"
+$mt = Get-Content $models -Raw
+if($mt -notmatch 'from django\.core\.files\.storage import default_storage'){ $mt = "from django.core.files.storage import default_storage`r`n"+$mt }
+if($mt -notmatch 'from django\.conf import settings'){ $mt = "from django.conf import settings`r`n"+$mt }
+if($mt -notmatch '@property\s+def\s+photo_url'){
+$prop = @"
+    @property
+    def photo_url(self):
+        candidate = self.photo.name if getattr(self, "photo", None) and self.photo and self.photo.name else None
+        if candidate:
+            try:
+                if default_storage.exists(candidate):
+                    return settings.MEDIA_URL + candidate
+            except Exception:
+                pass
+        return settings.MEDIA_URL + "stays_photos/placeholder.jpg"
+"@
+  if($mt -match 'class\s+Stay\s*\(models\.Model\)\s*:(.*?)(\nclass\s|\Z)'){
+    $mt = $mt -replace '(class\s+Stay\s*\(models\.Model\)\s*:\s*[\s\S]*?)(\nclass\s|\Z)', "`${1}`r`n$prop`r`n`$2"
+  } else { $mt = $mt.TrimEnd()+"`r`n`r`n"+$prop }
+}
+Set-Content $models $mt -Encoding UTF8
+"@ -Encoding UTF8
+
+          # run it + checks + collectstatic + probe
+          pwsh -File .\patch-placeholder.ps1
+          python manage.py check
+          python manage.py collectstatic --noinput
+          python - <<'PY'
+import os, sys, django
+sys.path.append(os.getcwd())
+# let manage.py decide settings; if needed, set default:
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "traveler.settings")
+try:
+    django.setup()
+except Exception as e:
+    print("[probe] setup failed:", e); raise SystemExit
+from django.test import Client
+c = Client()
+for p in ["/", "/stays/", "/stays/add/","/static/css/style.css","/media/stays_photos/placeholder.jpg"]:
+    try:
+        r = c.get(p)
+        print("[probe]", p, "->", r.status_code)
+    except Exception as e:
+        print("[probe]", p, "exception:", e)
+PY
+          # write report
+          mkdir reports -Force | Out-Null
+          gi . -Force | Out-Null
+
+      - name: Save report artifact
+        if: always()
+        run: |
+          echo "See Actions logs for probe output. (Optional: we can later write to reports/overnight_report.txt and open a PR.)"

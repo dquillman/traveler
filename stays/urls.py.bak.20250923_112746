@@ -1,0 +1,12 @@
+﻿from django.urls import path
+from . import views
+
+app_name = 'stays'
+
+urlpatterns = [
+    path('', views.stay_list, name='stay_list'),                 # /stays/
+    path('stays/', views.stay_list, name='list'),                # legacy alias
+    path('map-data/', views.stays_map_data, name='stays_map_data'),
+    path('add/', views.stay_add, name='add'),                    # template calls {% url 'stays:add' %}
+    path('edit/<int:pk>/', views.stay_edit, name='stay_edit'),   # template calls {% url 'stays:stay_edit' s.id %}
+]

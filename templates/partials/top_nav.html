@@ -1,0 +1,25 @@
+﻿<style>
+  .bt-nav { position: sticky; top: 0; z-index: 9999; background: #0f1220; border-bottom: 1px solid #272b41; padding: 10px 14px; }
+  .bt-nav .wrap { max-width: 1200px; margin: 0 auto; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .bt-nav a { color: #e8ebff; text-decoration: none; padding: 8px 10px; border-radius: 10px; border: 1px solid transparent; }
+  .bt-nav a:hover { background: rgba(185,198,255,.08); border-color: #2b3355; }
+  .bt-nav a.active { background: rgba(185,198,255,.15); border-color: #b9c6ff; }
+  .bt-nav .spacer { flex: 1; }
+  .bt-brand { font-weight: 700; letter-spacing: .3px; margin-right: 6px; }
+</style>
+
+<div class="bt-nav">
+  <div class="wrap">
+    <span class="bt-brand"><a href="/stays/" class="{% if request.path|slice:":7" == '/stays/' %}active{% endif %}">Traveler</a></span>
+
+    <a href="/stays/" class="{% if request.path == '/stays/' %}active{% endif %}">Stays</a>
+    <a href="/stays/map/" class="{% if request.path == '/stays/map/' %}active{% endif %}">Map</a>
+    <a href="/stays/charts/" class="{% if request.path == '/stays/charts/' %}active{% endif %}">Charts</a>
+    <a href="/stays/export/" class="{% if request.path == '/stays/export/' %}active{% endif %}">Export</a>
+    <a href="/stays/import/" class="{% if request.path == '/stays/import/' %}active{% endif %}">Import</a>
+    <a href="/stays/appearance/" class="{% if request.path == '/stays/appearance/' %}active{% endif %}">Appearance</a>
+
+    <span class="spacer"></span>
+  </div>
+</div>
+

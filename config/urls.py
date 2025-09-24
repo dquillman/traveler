@@ -1,9 +1,18 @@
-from django.contrib import admin
-from django.urls import path, include, reverse_lazy
+﻿from django.contrib import admin
+from django.urls import path, include
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
-    path('', RedirectView.as_view(url=reverse_lazy('stays:list'), permanent=False)),
-    path('stays/', include(('stays.urls', 'stays'), namespace='stays')),
-    path('admin/', admin.site.urls),
+    path('appearance/', RedirectView.as_view(url='/stays/appearance/', permanent=False)),
+    path('', RedirectView.as_view(url='/stays/', permanent=False)),
+    # Root redirects to the map
+
+    # Optional alias so /map/ works too
+
+    # App routes
+    path("stays/", include(("stays.urls", "stays"), namespace="stays")),
+    path("admin/", admin.site.urls),
 ]
+
+
+

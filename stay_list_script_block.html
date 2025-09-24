@@ -1,0 +1,34 @@
+<!-- Replace your existing map JS block with this (or ensure the fetch URL matches exactly) -->
+<script>
+  (function () {
+    var map = L.map('map');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    var q = window.location.search || '';
+
+    // Use a single, valid reverse (namespaced)
+    var mapDataUrl = "{% url 'stays:stays_map_data' %}";
+
+    fetch(mapDataUrl + q)
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var stays = (j && j.stays) ? j.stays : [];
+        var group = L.featureGroup();
+        stays.forEach(function (s) {
+          if (s.latitude != null && s.longitude != null) {
+            var m = L.marker([s.latitude, s.longitude]).bindPopup(s.popup_html || s.name || '');
+            group.addLayer(m);
+          }
+        });
+        if (group.getLayers().length) {
+          group.addTo(map);
+          map.fitBounds(group.getBounds(), { padding: [20, 20] });
+        } else {
+          map.setView([39.5, -98.35], 4); // fallback: center USA
+        }
+      });
+  })();
+</script>

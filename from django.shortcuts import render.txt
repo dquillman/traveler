@@ -1,0 +1,92 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Count, Sum, Avg
+from django.db.models.functions import TruncDate
+from urllib.parse import urlencode
+
+from .models import Stay
+
+
+def _apply_stay_filters(qs, request):
+    """Apply multi-filters: state, city, rating."""
+    states = request.GET.getlist("state")
+    cities = request.GET.getlist("city")
+    ratings = request.GET.getlist("rating")
+
+    if not states and request.GET.get("state"):
+        states = [request.GET.get("state")]
+    if not cities and request.GET.get("city"):
+        cities = [request.GET.get("city")]
+    if not ratings and request.GET.get("rating"):
+        ratings = [request.GET.get("rating")]
+
+    states = [s for s in states if s]
+    cities = [c for c in cities if c]
+    ratings_clean = []
+    for r in ratings:
+        try:
+            ratings_clean.append(int(r))
+        except Exception:
+            pass
+
+    if states:
+        qs = qs.filter(state__in=states)
+    if cities:
+        qs = qs.filter(city__in=cities)
+
+    # only filter rating if field exists
+    field_names = {getattr(f, "attname", None) or getattr(f, "name", None) for f in Stay._meta.get_fields()}
+    if ratings_clean and "rating" in field_names:
+        qs = qs.filter(rating__in=ratings_clean)
+
+    return qs
+
+
+def stay_list(request):
+    qs = Stay.objects.all()
+
+    state_choices = list(
+        Stay.objects.values_list("state", flat=True)
+        .exclude(state__isnull=True)
+        .exclude(state__exact="")
+        .distinct()
+        .order_by("state")
+    )
+    city_choices = list(
+        Stay.objects.values_list("city", flat=True)
+        .exclude(city__isnull=True)
+        .exclude(city__exact="")
+        .distinct()
+        .order_by("city")
+    )
+    rating_choices = [1, 2, 3, 4, 5]
+
+    qs = _apply_stay_filters(qs, request)
+
+    selected_states = request.GET.getlist("state") or ([request.GET.get("state")] if request.GET.get("state") else [])
+    selected_cities = request.GET.getlist("city") or ([request.GET.get("city")] if request.GET.get("city") else [])
+    selected_ratings = request.GET.getlist("rating") or ([request.GET.get("rating")] if request.GET.get("rating") else [])
+    selected_ratings = [str(r) for r in selected_ratings]
+
+    qs_params = []
+    for s in selected_states:
+        qs_params.append(("state", s))
+    for c in selected_cities:
+        qs_params.append(("city", c))
+    for r in selected_ratings:
+        qs_params.append(("rating", r))
+    map_query = urlencode(qs_params)
+
+    return render(
+        request,
+        "stays/stay_list.html",
+        {
+            "stays": qs,
+            "state_choices": state_choices,
+            "city_choices": city_choices,
+            "rating_choices": rating_choices,
+            "selected_states": selected_states,
+            "selected_cities": selected_cities,
+            "selected_ratings": selected_ratings,
+            "map_query": map_query,
+        },
+    )

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 1.5rem; }
+    .box { border:1px solid #ddd; border-radius:10px; padding:16px; }
+  </style>
+</head>
+<body>
+  <h1>Map (placeholder)</h1>
+  <div class="box">
+    This is a temporary stub so migrations can run.
+    We’ll swap this for the real interactive map after the schema updates.
+  </div>
+</body>
+</html>

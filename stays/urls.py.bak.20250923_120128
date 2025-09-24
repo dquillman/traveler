@@ -1,0 +1,12 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path("", views.stay_list, name="stay_list"),
+    path("add/", views.stay_add, name="stay_add"),
+    path("edit/<int:pk>/", views.stay_edit, name="stay_edit"),
+    path("map-data/", views.stays_map_data, name="stays_map_data"),
+    path("charts/", views.stays_charts, name="stays_charts"),
+    path("import/", views.stays_import, name="stays_import"),
+    path("export/", views.stays_export, name="stays_export"),
+]

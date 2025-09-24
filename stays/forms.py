@@ -1,4 +1,4 @@
-from django import forms
+﻿from django import forms
 from .models import Stay
 class StayForm(forms.ModelForm):
     class Meta:
@@ -10,3 +10,5 @@ class StayForm(forms.ModelForm):
         for fname in ("latitude", "longitude"):
             if fname in self.fields:
                 self.fields[fname].widget = forms.NumberInput(attrs={"step": "0.000001", "inputmode": "decimal"})
+class StayImportForm(forms.Form):
+    file = forms.FileField()

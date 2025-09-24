@@ -1,0 +1,89 @@
+﻿{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<h1>Stays</h1>
+
+
+
+<div class="panel" style="padding:0;">
+  <table>
+    <thead>
+      <tr>
+        <th>Photo</th>
+        <th>Park</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Check in</th>
+        <th>Leave</th>
+        <th># Nts</th>
+        <th>Rate/nt</th>
+        <th>Total</th>
+        <th>Fees</th>
+        <th>Paid?</th>
+        <th>Site</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in stays %}
+      <tr>
+        <td>
+          {% if s.photo %}
+            <img src="{{ s.photo.url }}" alt="" style="height:48px;width:auto;border-radius:6px;">
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ s.park|default:"—" }}</td>
+        <td>{{ s.city|default:"—" }}</td>
+        <td>{{ s.state|default:"—" }}</td>
+        <td>{{ s.check_in|default:"—" }}</td>
+        <td>{{ s.leave|default:"—" }}</td>
+        <td>{{ s.nights|default:"—" }}</td>
+        <td>{% if s.rate_per_night is not None %}${{ s.rate_per_night }}{% else %}—{% endif %}</td>
+        <td>{% if s.total is not None %}${{ s.total }}{% else %}—{% endif %}</td>
+        <td>{% if s.fees is not None %}${{ s.fees }}{% else %}—{% endif %}</td>
+        <td>{{ s.paid|yesno:"Yes,No" }}</td>
+        <td>{{ s.site|default:"—" }}</td>
+        <td><a href="{% url 'stays:stay_edit' s.id %}">Open / Edit</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="13" style="text-align:center;padding:16px;">No stays yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div style="padding:12px;">
+    <a class="button" href="{% url 'stays:add' %}">Add Stay</a>
+  </div>
+</div>
+
+<script>
+  const map = L.map('map', { scrollWheelZoom: false }).setView([39.5, -98.35], 4);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OSM & CARTO',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }).addTo(map);
+
+  const markers = [];
+  {% for s in stays %}
+    {% if s.latitude and s.longitude %}
+      (function() {
+        const m = L.marker([{{ s.latitude }}, {{ s.longitude }}]).addTo(map)
+          .bindPopup(`<strong>{{ s.park|default:"Stay" }}</strong><br>{{ s.city|default:"" }}{% if s.state %}, {{ s.state }}{% endif %}`);
+        markers.push(m);
+      })();
+    {% endif %}
+  {% endfor %}
+
+  if (markers.length) {
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.2));
+  }
+</script>
+
+{% endblock %}
+
+
+
+
+

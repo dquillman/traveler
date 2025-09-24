@@ -1,0 +1,24 @@
+﻿from django.contrib import admin
+from django.urls import path, include, reverse_lazy
+from django.views.generic.base import RedirectView
+from django.shortcuts import render
+
+def appearance_view(request):
+    return render(request, "appearance.html")
+
+def import_view(request):
+    return render(request, "stays/import.html")
+
+def export_view(request):
+    return render(request, "stays/export.html")
+
+urlpatterns = [
+    path('map/', RedirectView.as_view(pattern_name='stays:stays_map', permanent=False)),
+    path("", RedirectView.as_view(url=reverse_lazy("stays:list"), permanent=False)),
+    path("appearance/", appearance_view, name="appearance"),
+    path("import/", import_view, name="import"),
+    path("export/", export_view, name="export"),
+    path("stays/", include(("stays.urls", "stays"), namespace="stays")),
+    path("admin/", admin.site.urls),
+]
+

@@ -1,37 +1,83 @@
-{% extends 'base.html' %}
-{% block title %}Stays Map{% endblock %}
-{% block content %}
-<div class="container mx-auto px-4 py-6">
-  <h1 class="text-2xl font-semibold mb-4">Stays Map</h1>
-  <div id="map" style="height: 70vh; border-radius: 10px; overflow: hidden;"></div>
-  <p class="mt-4">
-    <a class="btn" href="{% url 'stays:list' %}">Back to list</a>
-  </p>
-</div>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traveler • Map</title>
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <style>
+    :root { --bg:#0f1220; --card:#161a2b; --ink:#e8ebff; --muted:#9aa4d2; --line:#272b41; --accent:#b9c6ff; }
+    *{box-sizing:border-box}
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; margin:0; background:var(--bg); color:var(--ink); }
+    header { padding:14px 18px; background:#101425; color:#fff; display:flex; align-items:center; gap:16px; }
+    header .brand { font-weight:700; }
+    header nav a { color:var(--accent); text-decoration:none; margin-right:14px; }
+    .wrap { max-width:1200px; margin:0 auto; padding:16px; }
+    #map { width:100%; height:460px; border-radius:14px; background:#0a0d18; }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Traveler</div>
+    <nav>
+      <a href="/stays/">Stays</a>
+      <a href="/stays/add/">Add</a>
+      <a href="/stays/map/">Map</a>
+      <a href="/stays/charts/">Charts</a>
+      <a href="/stays/import/">Import</a>
+      <a href="/stays/export/">Export</a>
+      <a href="/appearance/">Appearance</a>
+    </nav>
+  </header>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <div class="wrap">
+    <div id="map"></div>
+    <p class="muted" style="margin:8px 4px 0;">Pins load from <code>/stays/map-data/</code>.</p>
+    <div id="map-status" class="muted" style="margin:8px 4px 0;"></div>
+  </div>
 
-<script>
-  const stays = JSON.parse(document.getElementById('stays-data').textContent);
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    (function(){
+      var map = L.map('map');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18, attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
 
-  let center = [39.5, -98.35];
-  const map = L.map('map').setView(center, stays.length ? 5 : 4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+      var q = window.location.search || '';
+      var mapDataUrl = "/stays/map-data/";
+      var statusEl = document.getElementById('map-status');
 
-  const group = L.featureGroup();
-  stays.forEach(s => {
-    if (s.lat == null || s.lng == null) return;
-    const m = L.marker([s.lat, s.lng]).bindPopup(`<strong>${s.title}</strong><br>${s.subtitle}`);
-    group.addLayer(m);
-  });
-  if (group.getLayers().length) {
-    group.addTo(map);
-    map.fitBounds(group.getBounds().pad(0.2));
-  }
-</script>
-
-<script type="application/json" id="stays-data">{{ stays_json|safe }}</script>
-{% endblock %}
+      fetch(mapDataUrl + q)
+        .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(function(j){
+          var stays = (j && j.stays) ? j.stays : [];
+          var group = L.featureGroup();
+          stays.forEach(function(s){
+            if (s.latitude != null && s.longitude != null) {
+              var html = s.popup_html || '';
+              if (s.detail_url) { html += '<br><a href="' + s.detail_url + '">Open / Edit</a>'; }
+              var m = L.marker([s.latitude, s.longitude]).bindPopup(html);
+              group.addLayer(m);
+            }
+          });
+          if (group.getLayers().length) {
+            group.addTo(map);
+            map.fitBounds(group.getBounds(), { padding: [20,20] });
+            statusEl.textContent = '';
+          } else {
+            map.setView([39.5, -98.35], 4);
+            statusEl.textContent = 'No mappable stays yet (add a stay with latitude & longitude).';
+          }
+        })
+        .catch(function(err){
+          console.error('Map data error', err);
+          map.setView([39.5, -98.35], 4);
+          statusEl.textContent = 'Could not load map data: ' + err.message + ' (open /stays/map-data/ to debug).';
+        });
+    })();
+  </script>
+</body>
+</html>

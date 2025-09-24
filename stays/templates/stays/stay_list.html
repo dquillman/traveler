@@ -1,63 +1,73 @@
-{% extends "base.html" %}
-{% block content %}
-  <div class="flex items-center justify-between mb-4">
-    <h1 class="text-2xl font-semibold">Add Stay</h1>
-    <a class="btn btn-primary" href="{% url 'stays:add' %}">Add Stay</a>
-  </div>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traveler &bull; Stays</title>
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <!-- basic styling matching the existing UI -->
+  <style>
+    :root { --bg:#0f1220; --card:#161a2b; --ink:#e8ebff; --muted:#9aa4d2; --line:#272b41; --accent:#b9c6ff; }
+    *{box-sizing:border-box}
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; margin:0; background:var(--bg); color:var(--ink); }
+    header { padding:14px 18px; background:#101425; color:#fff; display:flex; align-items:center; gap:16px; }
+    header .brand { font-weight:700; }
+    header nav a { color:var(--accent); text-decoration:none; margin-right:14px; }
+    .wrap { max-width:1200px; margin:0 auto; padding:16px; }
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.25); }
+    table { width:100%; border-collapse:collapse; background:var(--card); border-radius:14px; overflow:hidden; border:1px solid var(--line); margin-top:16px; }
+    th, td { padding:10px 12px; border-bottom:1px solid var(--line); }
+    th { text-align:left; color:var(--muted); font-weight:600; background:#12162a; }
+    td a { color: var(--accent); text-decoration: none; }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Traveler</div>
+    <nav>
+      <a href="/stays/">Stays</a>
+      <a href="/stays/add/">Add</a>
+      <a href="/stays/map/">Map</a>
+      <a href="/stays/charts/">Charts</a>
+      <a href="/stays/import/">Import</a>
+      <a href="/stays/export/">Export</a>
+      <a href="/appearance/">Appearance</a>
+    </nav>
+  </header>
 
-  <div class="overflow-x-auto rounded-lg border border-slate-800">
-    <table class="classic">
+  <div class="wrap">
+    <h1>Stays</h1>
+    {% comment %} Display a list of stays in a table {% endcomment %}
+    <table>
       <thead>
         <tr>
-          <th>Photo</th>
           <th>Park</th>
           <th>City</th>
           <th>State</th>
-          <th>Check in</th>
-          <th>Leave</th>
-          <th># Nts</th>
-          <th>Rate/nt</th>
-          <th>Total</th>
-          <th>Fees</th>
-          <th>Paid?</th>
-          <th>Site</th>
-          <th></th>
+          <th>Rating</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        {% for s in stays %}
-          {% with nights=0 %}
-            {% if s.check_in and s.leave %}
-              {% with nights=s.leave|date:"U"|add:"- %d"|stringformat:"d"|add:"0" %}{% endwith %}
-            {% endif %}
-          {% endwith %}
-          <tr>
-            <td>
-              {% if s.photo %}
-                <img class="thumb" src="{{ s.photo.url }}" alt="photo"/>
-              {% else %}
-                —
-              {% endif %}
-            </td>
-            <td><a href="{% url 'stays:detail' s.pk %}">{{ s.park|default:"—" }}</a></td>
-            <td>{{ s.city|default:"—" }}</td>
-            <td>{{ s.state|default:"—" }}</td>
-            <td>{{ s.check_in|date:"Y-m-d"|default:"—" }}</td>
-            <td>{{ s.leave|date:"Y-m-d"|default:"—" }}</td>
-            <td class="num">
-              {% if s.check_in and s.leave %}{{ s.leave|date:"U"|add:"-"|add:s.check_in|date:"U" }}{% else %}0{% endif %}
-            </td>
-            <td class="num">{{ s.rate_per_night|default:0|floatformat:2 }}</td>
-            <td class="num">{{ s.total|default:0|floatformat:2 }}</td>
-            <td class="num">{{ s.fees|default:0|floatformat:2 }}</td>
-            <td>{% if s.paid %}Paid{% else %}No{% endif %}</td>
-            <td>{{ s.site|default:"" }}</td>
-            <td><a class="btn" href="{% url 'stays:edit' s.pk %}">Edit</a></td>
-          </tr>
+        {% for stay in stays %}
+        <tr>
+          <td>{{ stay.park|default:"Stay "|add:stay.pk }}</td>
+          <td>{{ stay.city }}</td>
+          <td>{{ stay.state }}</td>
+          <td>{{ stay.rating }}</td>
+          <td>
+            <a href="{% url 'stays:detail' stay.pk %}">View</a> |
+            <a href="{% url 'stays:edit' stay.pk %}">Edit</a>
+          </td>
+        </tr>
         {% empty %}
-          <tr><td colspan="13"><span class="badge">No stays yet</span></td></tr>
+        <tr>
+          <td colspan="5" class="muted">No stays found.</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-{% endblock %}
+</body>
+</html>

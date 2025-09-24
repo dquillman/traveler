@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<h1>{% if mode == 'edit' %}Edit Stay{% else %}Add Stay{% endif %}</h1>
+<div class="panel" style="padding:16px;">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <table>
+      {{ form.as_table }}
+    </table>
+    <div style="margin-top:12px;">
+      <button type="submit" class="button">Save</button>
+      <a class="button" href="{% url 'stays:list' %}" style="margin-left:8px;">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+
+
+

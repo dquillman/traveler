@@ -1,0 +1,19 @@
+﻿from django.conf.urls.static import static
+from django.conf import settings
+from django.contrib import admin
+from django.urls import path, include, reverse_lazy
+from django.views.generic.base import RedirectView
+
+urlpatterns = [
+    path('', RedirectView.as_view(url=reverse_lazy('stays:list'), permanent=False)),
+    path('stays/', include(('stays.urls', 'stays'), namespace='stays')),
+    path('admin/', admin.site.urls),
+]
+
+# DEV ONLY: serve uploaded media at /media/
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+
+

@@ -1,15 +1,27 @@
+from .models import Stay
+from django.shortcuts import redirect
+from django.db.models import Sum, Count
+from .forms import StayImportForm
+
+from django.http import HttpResponse
+from django.utils import timezone
+from .models import Stay
+import csv
 import json
+from io import TextIOWrapper
 from urllib.parse import urlencode
+from datetime import datetime
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Count, Sum, Avg
-from django.db.models.functions import TruncDate
+from django.db.models.functions import ExtractYear
+from django.http import JsonResponse, HttpResponse
+from django.contrib import messages
 
-from .models import Stay
+from stays.models import Stay
 
 # Try to use your app's form; fallback to a simple ModelForm
 try:
-    from .forms import StayForm
+    from stays.forms import StayForm
 except Exception:
     from django.forms import ModelForm
     class StayForm(ModelForm):
@@ -81,15 +93,71 @@ def stay_map(request):
     """Leaflet map of stays; zooms to filtered stays if filters present, otherwise all."""
     qs = _apply_stay_filters(Stay.objects.all(), request)
     qs = qs.exclude(latitude__isnull=True).exclude(longitude__isnull=True)
-    points = []
+    # Provide lat/lng and popup HTML for each stay
+    stays = []
     for s in qs:
-        points.append({
-            "lat": float(s.latitude) if s.latitude is not None else None,
-            "lng": float(s.longitude) if s.longitude is not None else None,
-            "title": f"{getattr(s, 'park', '')}".strip() or f"Stay {s.pk}",
-            "subtitle": f"{getattr(s, 'city', '')}, {getattr(s, 'state', '')}".strip(", "),
+        popup_html = f"{getattr(s, 'park', '')}".strip() or f"Stay {s.pk}"
+        city_state = f"{getattr(s, 'city', '')}, {getattr(s, 'state', '')}".strip(', ')
+        if city_state:
+            popup_html += f"<br>{city_state}"
+        stays.append({
+            "latitude": float(s.latitude) if s.latitude is not None else None,
+            "longitude": float(s.longitude) if s.longitude is not None else None,
+            "popup_html": popup_html,
+            "detail_url": f"/stays/{s.pk}/",
         })
-    return render(request, "stays/map.html", {"stays_json": json.dumps(points)})
+    return JsonResponse({"stays": stays})
+
+# Alias for map data endpoint to match URL `/stays/map-data/`
+def stays_map_data(request):
+    """
+    Returns GeoJSON FeatureCollection of stays with coordinates.
+    Accepts latitude/longitude or lat/lng or lat/lon field names.
+    """
+    def get_coord(obj):
+        lat = getattr(obj, "latitude", None)
+        lng = getattr(obj, "longitude", None)
+        if lat is None:
+            lat = getattr(obj, "lat", None)
+        if lng is None:
+            lng = getattr(obj, "lng", None)
+        if lng is None:
+            lng = getattr(obj, "lon", None)
+        try:
+            lat = float(lat) if lat is not None else None
+        except Exception:
+            lat = None
+        try:
+            lng = float(lng) if lng is not None else None
+        except Exception:
+            lng = None
+        return lat, lng
+
+    features = []
+    for s in Stay.objects.all():
+        lat, lng = get_coord(s)
+        if lat is None or lng is None:
+            continue
+        props = {
+            "park": getattr(s, "park", "") or "",
+            "city": getattr(s, "city", "") or "",
+            "state": getattr(s, "state", "") or "",
+            "nights": getattr(s, "nights", 0) or 0,
+            "id": s.id,
+        }
+        features.append({
+            "type": "Feature",
+            "properties": props,
+            "geometry": {"type": "Point", "coordinates": [lng, lat]},
+        })
+    return JsonResponse({"type": "FeatureCollection", "features": features})
+
+def map_page(request):
+    """Render the standalone map page with Leaflet.
+
+    This page loads map data from the `/stays/map-data/` endpoint via JavaScript.
+    """
+    return render(request, 'stays/map.html')
 
 def stay_detail(request, pk):
     obj = get_object_or_404(Stay, pk=pk)
@@ -100,6 +168,7 @@ def stay_add(request):
         form = StayForm(request.POST)
         if form.is_valid():
             obj = form.save()
+            messages.success(request, "Stay added successfully.")
             return redirect("stays:detail", pk=obj.pk)
     else:
         form = StayForm()
@@ -111,6 +180,7 @@ def stay_edit(request, pk):
         form = StayForm(request.POST, instance=obj)
         if form.is_valid():
             obj = form.save()
+            messages.success(request, "Stay updated successfully.")
             return redirect("stays:detail", pk=obj.pk)
     else:
         form = StayForm(instance=obj)
@@ -137,7 +207,6 @@ def stay_charts(request):
             date_field = cand
             break
     if date_field:
-        from django.db.models.functions import ExtractYear
         qs_years = (Stay.objects.exclude(**{f"{date_field}__isnull": True})
                     .annotate(y=ExtractYear(date_field))
                     .values_list("y"))
@@ -176,3 +245,177 @@ def stay_charts(request):
         "has_rating": bool(rating_labels),
     }
     return render(request, "stays/charts.html", ctx)
+
+def appearance_view(request):
+    """Render a simple Appearance settings page."""
+    return render(request, "appearance.html")
+
+def import_view(request):
+    """Import stays from a CSV file with columns: park,city,state,rating,latitude,longitude"""
+    if request.method == "POST" and request.FILES.get('file'):
+        file = request.FILES['file']
+        try:
+            data = TextIOWrapper(file.file, encoding='utf-8')
+            reader = csv.DictReader(data)
+            count = 0
+            for row in reader:
+                # create or update a stay
+                s = Stay()
+                s.park = row.get('park') or ''
+                s.city = row.get('city') or ''
+                s.state = row.get('state') or ''
+                rating = row.get('rating')
+                try:
+                    s.rating = int(rating) if rating else None
+                except Exception:
+                    s.rating = None
+                s.latitude = float(row.get('latitude')) if row.get('latitude') else None
+                s.longitude = float(row.get('longitude')) if row.get('longitude') else None
+                s.save()
+                count += 1
+            messages.success(request, f"Imported {count} stays from file.")
+            return redirect('stays:list')
+        except Exception as e:
+            messages.error(request, f"Import failed: {e}")
+    return render(request, 'stays/import.html')
+
+def export_view(request):
+    """
+    Display a page with a download link and return a CSV of all stays when
+    the `download` query parameter is present (e.g. ?download=1).
+
+    The CSV contains columns: park, city, state, rating, latitude, longitude.
+    """
+    # If user requested download, stream the CSV file
+    if request.GET.get('download'):
+        response = HttpResponse(content_type='text/csv')
+        filename = f"stays_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        writer = csv.writer(response)
+        writer.writerow(['park', 'city', 'state', 'rating', 'latitude', 'longitude'])
+        for s in Stay.objects.all():
+            writer.writerow([s.park, s.city, s.state, s.rating, s.latitude, s.longitude])
+        return response
+
+    # Otherwise render the export page with a link to download
+    return render(request, 'stays/export.html')
+
+def export_home(request):
+    """Renders the Export page with simple stats/links."""
+    total = Stay.objects.count()
+    current_year = timezone.now().year
+    this_year = Stay.objects.filter(check_in__year=current_year).count()
+    return render(request, "stays/export.html", {
+        "total": total,
+        "current_year": current_year,
+        "this_year": this_year,
+    })
+
+def export_stays_csv(request):
+    """
+    Downloads stays as CSV.
+    Optional filter: ?year=YYYY
+    """
+    qs = Stay.objects.all().order_by("check_in", "city")
+    year = request.GET.get("year")
+    if year and year.isdigit():
+        qs = qs.filter(check_in__year=int(year))
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    fname = "stays_export.csv" if not year else f"stays_{year}.csv"
+    response["Content-Disposition"] = f'attachment; filename="{fname}"'
+    writer = csv.writer(response)
+    writer.writerow(["Park","City","State","Check In","Leave","Nights","Rate/Nt","Price/Night","Paid?"])
+    for s in qs:
+        writer.writerow([
+            s.park or "",
+            s.city or "",
+            s.state or "",
+            getattr(s, "check_in", "") or "",
+            getattr(s, "leave", "") or "",
+            getattr(s, "nights", 0) or 0,
+            getattr(s, "rate_per_night", 0) or 0,
+            getattr(s, "price_per_night", 0) or 0,
+            "Yes" if getattr(s, "paid", False) else "No",
+        ])
+    return response
+
+def charts_page(request):
+    return render(request, "stays/charts.html")
+
+def stays_chart_data(request):
+    # Example: total nights per state
+    qs = (Stay.objects
+                .values('state')
+                .annotate(nights=Sum('nights'), count=Count('id'))
+                .order_by('state'))
+    labels = [r['state'] or '—' for r in qs]
+    data = [int(r['nights'] or 0) for r in qs]
+    return JsonResponse({'labels': labels, 'datasets': [{'label': 'Nights', 'data': data}]})
+
+import io, csv as _csv
+
+def import_stays(request):
+    if request.method == 'POST':
+        form = StayImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            f = request.FILES['file']
+            raw = f.read()
+
+            # Try encodings (handles Windows-1252 mojibake)
+            text = None
+            for enc in ('utf-8-sig', 'cp1252'):
+                try:
+                    text = raw.decode(enc)
+                    break
+                except UnicodeDecodeError:
+                    pass
+            if text is None:
+                text = raw.decode('utf-8', errors='ignore')
+
+            reader = _csv.DictReader(io.StringIO(text))
+            created = updated = skipped = 0
+
+            for row in reader or []:
+                if not row:
+                    skipped += 1
+                    continue
+                row = { (k or '').strip().lower().replace('\ufeff',''): (v or '').strip() for k,v in row.items() }
+
+                park  = row.get('park','')
+                city  = row.get('city','')
+                state = row.get('state','')
+                check_in = row.get('check in') or row.get('check_in') or row.get('checkin') or ''
+                leave    = row.get('leave','')
+                try:
+                    nights = int(row.get('nights') or 0)
+                except:
+                    nights = 0
+                try:
+                    rate = float(row.get('rate/nt') or row.get('rate_per_night') or 0)
+                except:
+                    rate = 0.0
+                try:
+                    price = float(row.get('price/night') or row.get('price_per_night') or rate or 0)
+                except:
+                    price = 0.0
+                paid = (row.get('paid?') or row.get('paid') or '').lower() in ('yes','true','1','y')
+
+                obj, is_created = Stay.objects.update_or_create(
+                    park=park, city=city, state=state, check_in=check_in, leave=leave,
+                    defaults={'nights': nights, 'rate_per_night': rate, 'price_per_night': price, 'paid': paid}
+                )
+                created += int(is_created)
+                updated += int(not is_created)
+
+            messages.success(request, f'Import complete. Created {created}, updated {updated}, skipped {skipped}.')
+            return redirect('stay_list') if 'stay_list' in globals() or 'stay_list' in locals() else redirect('stays_import')
+    else:
+        form = StayImportForm()
+    return render(request, 'stays/import.html', {'form': form})
+
+def appearance_page(request):
+    # keep it simple; renders a template that includes a top nav
+    return render(request, 'stays/appearance.html')
+
+

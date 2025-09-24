@@ -1,0 +1,129 @@
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render
+from django.urls import reverse, NoReverseMatch
+from django.utils.html import escape
+from .models import Stay
+
+# --- Helpers --------------------------------------------------------------
+
+LAT_CANDIDATES = ["latitude", "lat", "gps_lat", "y", "lat_deg", "lat_degrees"]
+LNG_CANDIDATES = ["longitude", "lng", "lon", "gps_lng", "x", "long_deg", "long_degrees"]
+
+def _to_float(v):
+    try:
+        if v is None:
+            return None
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+def _get_lat_lng(obj):
+    # try all candidate attribute names
+    lat = None
+    lng = None
+    for name in LAT_CANDIDATES:
+        lat = _to_float(getattr(obj, name, None))
+        if lat is not None:
+            break
+    for name in LNG_CANDIDATES:
+        lng = _to_float(getattr(obj, name, None))
+        if lng is not None:
+            break
+    return lat, lng
+
+def _apply_filters(request, qs):
+    state = (request.GET.get('state') or '').strip()
+    stars = (request.GET.get('stars') or '').strip()
+    if state:
+        qs = qs.filter(state__iexact=state)
+    if stars:
+        try:
+            s = int(stars)
+            if 1 <= s <= 5:
+                qs = qs.filter(rating=s)
+        except ValueError:
+            pass
+    return qs
+
+# --- Views ----------------------------------------------------------------
+
+def stay_list(request):
+    qs = _apply_filters(request, Stay.objects.all()).order_by('-check_in', '-id')
+
+    states = (Stay.objects.exclude(state__isnull=True).exclude(state='')
+              .values_list('state', flat=True).distinct().order_by('state'))
+    stars_options = [5, 4, 3, 2, 1]
+
+    ctx = dict(
+        stays=qs,
+        states=states,
+        stars_options=stars_options,
+        selected_state=request.GET.get('state', ''),
+        selected_stars=request.GET.get('stars', ''),
+    )
+    return render(request, 'stays/stay_list.html', ctx)
+
+def _detail_url_for(s):
+    for name in ('stay_edit', 'stay_detail'):
+        try:
+            return reverse(name, args=[s.id])
+        except NoReverseMatch:
+            continue
+    return ''
+
+def stays_map_data(request):
+    """Return JSON for map pins."""
+    qs = Stay.objects.all()
+
+    # Optional filters
+    state = request.GET.get("state")
+    city = request.GET.get("city")
+    if state:
+        qs = qs.filter(state__iexact=state)
+    if city:
+        qs = qs.filter(city__iexact=city)
+
+    # Only include rows with coordinates
+    # Prefer canonical fields; helper exists but many models use 'latitude'/'longitude'
+    qs = qs.exclude(latitude__isnull=True).exclude(longitude__isnull=True)
+
+    out = []
+    for s in qs:
+        name = getattr(s, "park", None) or getattr(s, "name", "") or f"Stay #{s.pk}"
+        city_val = getattr(s, "city", "") or ""
+        state_val = getattr(s, "state", "") or ""
+        popup = f"<strong>{escape(name)}</strong><br>{escape(city_val)}, {escape(state_val)}"
+
+        out.append({
+            "id": s.pk,
+            "name": name,
+            "latitude": _to_float(getattr(s, 'latitude', None)),
+            "longitude": _to_float(getattr(s, 'longitude', None)),
+            "popup_html": popup,
+        })
+
+    return JsonResponse({"stays": out}, json_dumps_params={"ensure_ascii": False})
+
+# --- Stubs to satisfy project URL imports ---------------------------------
+
+def appearance_view(request):
+    """Minimal placeholder so project-level config.urls import won't crash."""
+    return HttpResponse("Appearance OK")
+
+from django.http import HttpResponse
+from django.shortcuts import render
+
+def appearance_view(request):
+    return HttpResponse("Appearance page — placeholder.")
+
+def export_view(request):
+    # TODO: stream CSV export here
+    return HttpResponse("Export — placeholder CSV/JSON exporter.")
+
+def import_view(request):
+    # TODO: handle CSV upload form and import
+    return HttpResponse("Import — placeholder uploader.")
+
+def charts_view(request):
+    # TODO: render charts template
+    return HttpResponse("Charts — placeholder page.")

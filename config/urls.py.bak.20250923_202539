@@ -1,0 +1,15 @@
+from django.contrib import admin
+from django.urls import path, include
+from django.views.generic.base import RedirectView
+
+urlpatterns = [
+    # Root redirects to the map
+    path("", RedirectView.as_view(url="/stays/map/", permanent=False)),
+
+    # Optional alias so /map/ works too
+    path("map/", RedirectView.as_view(url="/stays/map/", permanent=False)),
+
+    # App routes
+    path("stays/", include(("stays.urls", "stays"), namespace="stays")),
+    path("admin/", admin.site.urls),
+]

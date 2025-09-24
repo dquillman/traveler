@@ -1,0 +1,89 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traveler • Stays</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-o9N1j7kPvxG8kGHLm0P7E3vhd0JQ8Z8Lx9vZ1C8Q2vY=" crossorigin=""/>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; margin:0; background:#f7f7fb; color:#111; }
+    header { padding:14px 18px; background:#121826; color:#fff; display:flex; align-items:center; gap:16px; }
+    header a { color:#b9c6ff; text-decoration:none; margin-right:14px; }
+    .wrap { max-width:1200px; margin:0 auto; padding:16px; }
+    #map { width:100%; height:480px; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.08); background:#e9eef6; }
+    .hint { margin-top:10px; color:#444; font-size:14px; }
+    table { width:100%; border-collapse:collapse; margin-top:18px; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.06); }
+    th, td { padding:10px 12px; border-bottom:1px solid #eee; }
+    th { text-align:left; background:#fafbff; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Traveler</strong>
+    <nav>
+      <a href="{% url 'stays:stay_list' %}">Stays</a>
+      <a href="{% url 'stays:stay_add' %}">Add</a>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <div id="map"></div>
+    <div class="hint">Pins are loaded from <code>{% url 'stays:stays_map_data' %}</code>.</div>
+
+    {% comment %} Your table/list markup can stay below; stubbed for safety {% endcomment %}
+    {% if stays %}
+      <table>
+        <thead><tr><th>Park</th><th>City</th><th>State</th><th>Check in</th><th>Leave</th></tr></thead>
+        <tbody>
+        {% for s in stays %}
+          <tr>
+            <td>{{ s.park|default:s.name }}</td>
+            <td>{{ s.city }}</td>
+            <td>{{ s.state }}</td>
+            <td>{{ s.check_in }}</td>
+            <td>{{ s.leave }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-o4mY9G7yyEJ9vE3F7w2S2U9Q4KQk2r+bQKp1R4C6G2Q=" crossorigin=""></script>
+  <script>
+  (function(){
+    var map = L.map('map');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18, attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    var q = window.location.search || '';
+    var mapDataUrl = "{% url 'stays:stays_map_data' %}"; // ✅ namespaced reverse
+
+    fetch(mapDataUrl + q)
+      .then(function(r){ if(!r.ok) throw new Error('Bad status '+r.status); return r.json(); })
+      .then(function(j){
+        var stays = (j && j.stays) ? j.stays : [];
+        var group = L.featureGroup();
+        stays.forEach(function(s){
+          if (s.latitude != null && s.longitude != null) {
+            var m = L.marker([s.latitude, s.longitude]).bindPopup(s.popup_html || s.name || '');
+            group.addLayer(m);
+          }
+        });
+        if (group.getLayers().length) {
+          group.addTo(map);
+          map.fitBounds(group.getBounds(), { padding: [20,20] });
+        } else {
+          map.setView([39.5, -98.35], 4);
+        }
+      })
+      .catch(function(err){
+        console.error('Map data error', err);
+        map.setView([39.5, -98.35], 4);
+      });
+  })();
+  </script>
+</body>
+</html>

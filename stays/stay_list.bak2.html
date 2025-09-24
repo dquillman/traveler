@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Stays</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; }
+    th { background: #f7f7f7; position: sticky; top: 0; }
+    a.btn { padding: 8px 12px; border: 1px solid #222; border-radius: 8px; text-decoration: none; }
+    .actions { margin-bottom: 12px; display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Your Stays</h1>
+  <div class="actions">
+    <a class="btn" href="{% url 'stays:add' %}">Add Stay</a>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Park</th>
+        <th>City/St</th>
+        <th>Check in</th>
+        <th>Leave</th>
+        <th>#Nts</th>
+        <th>Rate/nt</th>
+        <th>Total</th>
+        <th>Fees</th>
+        <th>Paid?</th>
+        <th>Site</th>
+        <th>Edit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in stays %}
+      <tr>
+        <td>{{ s.park }}</td>
+        <td>{{ s.city_state }}</td>
+        <td>{{ s.check_in }}</td>
+        <td>{{ s.leave_date }}</td>
+        <td>{{ s.nights }}</td>
+        <td>{{ s.price_night }}</td>
+        <td>{{ s.total }}</td>
+        <td>{{ s.fees }}</td>
+        <td>{{ s.paid|yesno:"Yes,No" }}</td>
+        <td>{{ s.site }}</td>
+        <td><a href="{% url 'stays:edit' s.pk %}">Edit</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="11">No stays yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

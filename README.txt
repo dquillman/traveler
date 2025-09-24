@@ -1,22 +1,16 @@
-# Traveler Fixed Bundle (Nav + URLs)
+Traveler immediate fix — files included
+=======================================
 
-This bundle contains safe replacements for:
-- templates/base.html  (adds banner menu, guards optional links)
-- stays/urls.py        (canonical names: list/add/detail/edit/map/charts)
-- config/urls.py       (root redirect to stays:list; includes stays; admin)
+Files:
+- templates_stays_stay_list.html  -> replace templates/stays/stay_list.html
+- stays_views_stays_map_data.py   -> paste into stays/views.py (overwrites stays_map_data)
+- install_traveler_fix.ps1        -> installer that backs up and writes these files
 
-## Install (backup first!)
+Quick install (PowerShell):
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+  .\install_traveler_fix.ps1 -Repo "G:\users\daveq\traveler"
 
-From your project root (`G:\users\daveq\traveler`):
-
-1) Create backups:
-   - templates\base.html.bak
-   - stays\urls.py.bak
-   - config\urls.py.bak
-
-2) Unzip this bundle into the project root, **overwriting** the three files above.
-
-3) Run:
-   venv\Scripts\python.exe manage.py runserver
-
-If you have custom routes in config/urls.py, re-add them after the include/redirect lines.
+Sanity check:
+  python manage.py shell -c "from django.urls import reverse; print(reverse('stays:stays_map_data'))"
+  # Expect: /stays/map-data/
+  python manage.py runserver
