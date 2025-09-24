@@ -1,8 +1,0 @@
-﻿{% extends "base.html" %}
-{% block title %}Appearance · Traveler{% endblock %}
-{% block content %}
-<h1>Appearance</h1>
-<div class="panel" style="padding:16px;">
-  <p>Dark theme is active. (Theme toggle coming soon.)</p>
-</div>
-{% endblock %}
