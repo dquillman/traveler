@@ -1,0 +1,14 @@
+<header class="site-header">
+  <nav class="container">
+    <a class="brand" href="/">Traveler</a>
+    <ul class="menu">
+      <li><a href="{% url 'stays:list' %}">Stays</a></li>
+      <li><a href="{% url 'stays:add' %}">Add</a></li>
+      <li><a href="{% url 'stays:map' %}">Map</a></li>
+      <li><a href="{% url 'stays:charts' %}">Charts</a></li>
+      <li><a href="/import/">Import</a></li>
+      <li><a href="/export/">Export</a></li>
+      <li><a href="/appearance/">Appearance</a></li>
+    </ul>
+  </nav>
+</header>

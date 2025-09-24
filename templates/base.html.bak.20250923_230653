@@ -18,8 +18,8 @@
   .bt-nav ~ header,
   .bt-nav ~ nav { display: none !important; }
 </style>
-<body>
-{% include 'partials/top_nav.html' %}
+<body>{% include 'partials/top_nav.html' %}
+
 <!-- site navbar (auto-wired) -->
 
 <main class="container" style="padding:16px;">
@@ -60,7 +60,6 @@
 </script>
 </body>
 </html>
-
 
 
 

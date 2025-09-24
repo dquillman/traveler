@@ -1,5 +1,4 @@
-﻿{% include 'partials/nav.html' %}
-<!doctype html><meta charset="utf-8"><title>Traveler â€¢ Appearance</title>
+﻿<!doctype html><meta charset="utf-8"><title>Traveler â€¢ Appearance</title>
 <style>:root{--bg:#0f1220;--card:#161a2b;--ink:#e8ebff;--muted:#9aa4d2;--line:#272b41}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
 .wrap{max-width:900px;margin:0 auto;padding:16px}
@@ -28,4 +27,3 @@ select,input[type=color]{padding:8px;border-radius:10px;border:1px solid var(--l
   <label for="accent">Accent color</label>
   <input id="accent" type="color" value="#b9c6ff">
 </div></div>
-
