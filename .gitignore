@@ -1,0 +1,11 @@
+﻿db.sqlite3
+db.sqlite3.*
+media/
+__pycache__/
+*.pyc
+*.bak
+*.bak.*
+*.backup_*
+*.tmp
+*.swp
+*.ps1_auto.py
