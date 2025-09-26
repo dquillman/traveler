@@ -1,0 +1,30 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Traveler • Stays</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin:0; padding:20px; background:#0f1220; color:#e8ebff; }
+      nav a { color:#b9c6ff; text-decoration:none; margin-right:12px; }
+      nav { margin-bottom:16px; }
+      select, button, input { padding:6px 10px; border-radius:8px; border:1px solid #272b41; background:#161a2b; color:#e8ebff; }
+      hr { border:0; border-top:1px solid #272b41; margin:16px 0; }
+      .card { background:#161a2b; border:1px solid #272b41; border-radius:12px; padding:16px; margin:12px 0; }
+      label { margin-right:8px; }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="/stays/">List</a>
+      <a href="/stays/add/">Add</a>
+      <a href="/stays/map/">Map</a>
+      <a href="/stays/charts/">Charts</a>
+      <a href="/stays/import/">Import</a>
+      <a href="/stays/export/">Export</a>
+      <a href="/stays/appearance/">Appearance</a>
+    </nav>
+    <hr>
+    {% block content %}{% endblock %}
+  </body>
+</html>

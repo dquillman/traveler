@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Export Stays (CSV){% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Export Stays</h1>
+    <form method="get" action="{% url 'stays:export_stays_csv' %}">
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+        <label>
+          <div>Filename</div>
+          <input class="txt" type="text" name="filename" value="{{ default_name|default:'stays_export.csv' }}" placeholder="stays_export.csv" />
+        </label>
+        <label>
+          <div>Subfolder (optional)</div>
+          <input class="txt" type="text" name="subdir" value="{{ default_subdir|default:'' }}" placeholder="e.g. backups/2025" />
+        </label>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" name="save" value="1" {% if default_save %}checked{% endif %} />
+          <span>Also save to server</span>
+        </label>
+        <button class="btn" type="submit">Download CSV</button>
+        <a class="btn btn-outline" href="{% url 'stays:export_stays_csv' %}">Quick Export</a>
+      </div>
+      <p class="muted" style="margin-top:10px">Server save base: <code>{{ exports_base }}</code>. Override with <code>EXPORTS_DIR</code> in settings.</p>
+    </form>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <h2 style="margin-top:0">Save Directly to Local Folder</h2>
+    <p class="muted">Requires a Chromium-based browser with the File System Access API (works on localhost over HTTP).</p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+      <button id="pick-folder" class="btn" type="button">Pick Folder…</button>
+      <span id="picked-label" class="muted">No folder selected</span>
+      <button id="save-to-folder" class="btn btn-outline" type="button" disabled>Save CSV to Selected Folder</button>
+    </div>
+    <div id="export-drop-zone" style="margin-top:12px; padding:20px; border:2px dashed #2b3a4a; border-radius:8px; text-align:center; color:var(--muted);">
+      Or drop here to save using the selected folder
+    </div>
+    <div id="save-status" class="muted" style="margin-top:8px"></div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const supportsFS = 'showDirectoryPicker' in window;
+  const pickBtn = document.getElementById('pick-folder');
+  const saveBtn = document.getElementById('save-to-folder');
+  const label = document.getElementById('picked-label');
+  const statusEl = document.getElementById('save-status');
+  const dropZone = document.getElementById('export-drop-zone');
+  let dirHandle = null;
+
+  function setStatus(msg, ok){
+    statusEl.textContent = msg || '';
+    statusEl.style.color = ok ? 'var(--success, #0a7c2f)' : 'var(--muted, #666)';
+  }
+
+  if (!supportsFS) {
+    pickBtn.disabled = true;
+    saveBtn.disabled = true;
+    label.textContent = 'Local folder saving not supported in this browser.';
+    return;
+  }
+
+  pickBtn.addEventListener('click', async () => {
+    try {
+      dirHandle = await window.showDirectoryPicker();
+      const name = (dirHandle && dirHandle.name) ? dirHandle.name : 'selected folder';
+      label.textContent = 'Selected: ' + name;
+      saveBtn.disabled = false;
+      setStatus('Folder selected. Ready to save.', true);
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // user canceled
+      setStatus('Could not open folder: ' + (e && e.message ? e.message : e), false);
+    }
+  });
+
+  async function saveCsvTo(handle) {
+    // Build export URL with current form values, but no server-save
+    const form = document.querySelector('form[action$="/stays/export/"]');
+    const filenameInput = form.querySelector('input[name="filename"]');
+    const fname = (filenameInput && filenameInput.value) ? filenameInput.value : 'stays_export.csv';
+    const url = new URL(form.action, window.location.origin);
+    url.searchParams.set('filename', fname);
+    // Ensure we only download, not server-save
+    url.searchParams.delete('save');
+    // Fetch CSV
+    const resp = await fetch(url.toString(), { credentials: 'same-origin' });
+    if (!resp.ok) throw new Error('Download failed: ' + resp.status);
+    const blob = await resp.blob();
+
+    // Write to chosen directory
+    const fileHandle = await handle.getFileHandle(fname, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+  }
+
+  saveBtn.addEventListener('click', async () => {
+    if (!dirHandle) return;
+    saveBtn.disabled = true;
+    setStatus('Saving…');
+    try {
+      await saveCsvTo(dirHandle);
+      setStatus('Saved CSV to selected folder.', true);
+    } catch (e) {
+      setStatus('Save failed: ' + (e && e.message ? e.message : e), false);
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  // Drag & drop to trigger save (uses previously selected folder, or prompts)
+  if (dropZone) {
+    function setHover(on) {
+      dropZone.style.borderColor = on ? '#7dd3fc' : '#2b3a4a';
+      dropZone.style.background = on ? 'rgba(125, 211, 252, 0.06)' : 'transparent';
+    }
+    ['dragenter','dragover'].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); setHover(true); });
+    });
+    ['dragleave','dragend'].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); setHover(false); });
+    });
+    dropZone.addEventListener('drop', async (e) => {
+      e.preventDefault(); e.stopPropagation(); setHover(false);
+      try {
+        if (!dirHandle) {
+          // Prompt for a directory on first use
+          dirHandle = await window.showDirectoryPicker();
+          label.textContent = 'Selected: ' + (dirHandle && dirHandle.name ? dirHandle.name : 'folder');
+          saveBtn.disabled = false;
+        }
+        setStatus('Saving…');
+        await saveCsvTo(dirHandle);
+        setStatus('Saved CSV to selected folder.', true);
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+        setStatus('Save failed: ' + (err && err.message ? err.message : err), false);
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}

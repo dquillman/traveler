@@ -36,7 +36,12 @@
 <body>
   <nav class="nav">
     <span class="brand">{{ site_appearance.site_name|default:"Traveler" }}</span>
-    <a href="/">Home</a><a href="/map/">Map</a><a href="/charts/">Charts</a><a href="/appearance/">Appearance</a><a href="/import/">Import</a><a href="/export/">Export</a><a href="/admin/">Admin</a>
+    <a href="{% url 'stays:list' %}">Home</a>
+    <a href="{% url 'stays:map' %}">Map</a>
+    <a href="{% url 'stays:charts' %}">Charts</a>
+    <a href="{% url 'stays:import_options' %}">Import</a>
+    <a href="{% url 'stays:export_options' %}">Export</a>
+    <a href="/admin/">Admin</a>
   </nav>
   <div class="wrap">
     {% if messages %}{% for m in messages %}<div class="card" style="margin-bottom:8px;">{{ m }}</div>{% endfor %}{% endif %}

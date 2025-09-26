@@ -6,9 +6,148 @@
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <p><input type="file" name="file" accept=".csv" required></p>
-      <div class="actions"><button type="submit" class="btn">Upload & Import</button></div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+        <label>
+          <div>Delimiter</div>
+          <select class="txt" name="delimiter">
+            <option value="auto" {% if default_delimiter == 'auto' %}selected{% endif %}>Auto-detect</option>
+            <option value="," {% if default_delimiter == ',' or default_delimiter == 'comma' %}selected{% endif %}>, (Comma)</option>
+            <option value=";" {% if default_delimiter == ';' or default_delimiter == 'semicolon' %}selected{% endif %}>; (Semicolon)</option>
+            <option value="\t" {% if default_delimiter == '\t' or default_delimiter == 'tab' %}selected{% endif %}>Tab</option>
+          </select>
+        </label>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" name="dry_run" value="1" {% if default_dry %}checked{% endif %} />
+          <span>Simulate only (don’t save)</span>
+        </label>
+      </div>
+      <div class="actions" style="margin-top:8px"><button type="submit" class="btn">Upload & Import</button></div>
     </form>
     <p class="muted" style="margin-top:8px">Preferred headers: <code>Park, City, State, Check in, Leave, #Nts, Rate/nt, Total, Fees, Paid?, Site, Notes</code>. Legacy <code>City/St</code> still supported.</p>
   </div>
+
+  <div class="card" style="margin-top:12px;">
+    <h2 style="margin-top:0">Import From Local File (No Upload UI)</h2>
+    <p class="muted">Uses the File System Access API (Chromium browsers). Respects the options above (Delimiter and Dry‑run).</p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+      <button id="pick-file" class="btn" type="button">Pick CSV…</button>
+      <span id="picked-file-label" class="muted">No file selected</span>
+      <button id="import-picked" class="btn btn-outline" type="button" disabled>Import Selected CSV</button>
+    </div>
+    <div id="drop-zone" style="margin-top:12px; padding:20px; border:2px dashed #2b3a4a; border-radius:8px; text-align:center; color:var(--muted);">
+      Or drop a .csv file here to select it
+    </div>
+    <div id="import-status" class="muted" style="margin-top:8px"></div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const supportsFS = 'showOpenFilePicker' in window;
+  const pickBtn = document.getElementById('pick-file');
+  const importBtn = document.getElementById('import-picked');
+  const label = document.getElementById('picked-file-label');
+  const statusEl = document.getElementById('import-status');
+  const dropZone = document.getElementById('drop-zone');
+  const form = document.querySelector('form[enctype="multipart/form-data"]');
+  let pickedFile = null;
+
+  function setStatus(msg, ok){
+    statusEl.textContent = msg || '';
+    statusEl.style.color = ok === false ? 'var(--muted, #666)' : '';
+  }
+
+  if (!supportsFS) {
+    pickBtn.disabled = true;
+    importBtn.disabled = true;
+    label.textContent = 'Local file picker not supported in this browser.';
+    return;
+  }
+
+  pickBtn.addEventListener('click', async () => {
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: 'CSV Files', accept: { 'text/csv': ['.csv'] } }],
+        multiple: false,
+      });
+      const file = await handle.getFile();
+      pickedFile = file;
+      label.textContent = 'Selected: ' + (file.name || 'file.csv');
+      importBtn.disabled = false;
+      setStatus('File selected. Ready to import.');
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // user canceled
+      setStatus('Could not open file: ' + (e && e.message ? e.message : e), false);
+    }
+  });
+
+  function getCsrf(){
+    const el = form.querySelector('input[name="csrfmiddlewaretoken"]');
+    return el ? el.value : '';
+  }
+
+  // Drag & drop support
+  if (dropZone) {
+    function setHover(on) {
+      dropZone.style.borderColor = on ? '#7dd3fc' : '#2b3a4a';
+      dropZone.style.background = on ? 'rgba(125, 211, 252, 0.06)' : 'transparent';
+    }
+    ['dragenter','dragover'].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); setHover(true); });
+    });
+    ['dragleave','dragend'].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); setHover(false); });
+    });
+    dropZone.addEventListener('drop', async (e) => {
+      e.preventDefault(); e.stopPropagation(); setHover(false);
+      const files = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : null;
+      if (!files || files.length === 0) { setStatus('No file dropped.', false); return; }
+      const file = files[0];
+      if (!file.name || !file.name.toLowerCase().endsWith('.csv')) {
+        setStatus('Please drop a .csv file.', false);
+        return;
+      }
+      pickedFile = file;
+      label.textContent = 'Selected: ' + (file.name || 'file.csv');
+      importBtn.disabled = false;
+      setStatus('File selected. Ready to import.', true);
+    });
+  }
+
+  importBtn.addEventListener('click', async () => {
+    if (!pickedFile) return;
+    importBtn.disabled = true;
+    setStatus('Importing…');
+    try {
+      const fd = new FormData();
+      fd.append('csrfmiddlewaretoken', getCsrf());
+      fd.append('file', pickedFile, pickedFile.name || 'stays.csv');
+      // carry options from the form
+      const delim = form.querySelector('select[name="delimiter"]').value || 'auto';
+      const dry = form.querySelector('input[name="dry_run"]').checked;
+      fd.append('delimiter', delim);
+      if (dry) fd.append('dry_run', '1');
+
+      const resp = await fetch(form.action, {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': getCsrf() }
+      });
+      if (!resp.ok) throw new Error('Import failed: ' + resp.status);
+      const html = await resp.text();
+      // Replace current page with result
+      document.open();
+      document.write(html);
+      document.close();
+    } catch (e) {
+      setStatus('Import error: ' + (e && e.message ? e.message : e), false);
+    } finally {
+      importBtn.disabled = false;
+    }
+  });
+})();
+</script>
 {% endblock %}
 

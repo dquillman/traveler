@@ -1,0 +1,36 @@
+ 505:                     price = 0.0
+ 506: 
+ 507:                 elect_extra = (row.get("elect extra") or row.get("elect_extra") or "").strip().lower() in {"yes","true","1","y","on","checked"}
+ 508:                 paid = (row.get("paid?") or row.get("paid") or "").strip().lower() in {"yes","true","1","y","paid"}
+ 509: 
+ 510:                 # Update or create the Stay row
+ 511:                 obj, is_created = Stay.objects.update_or_create(
+ 512:                     park=park,
+ 513:                     city=city,
+ 514:                     state=state,
+ 515:                     check_in=check_in,
+ 516:                     defaults={
+ 517:                         "nights": nights,
+ 518:                         "rate_per_night": rate,
+ 519:                         "price_per_night": price,
+ 520:                         "elect_extra": elect_extra,
+ 521:                         "paid": paid,
+ 522:                         "site": (row.get("site") or ""),
+ 523:                         "check_out": check_out,
+ 524:                     },
+ 525:                 )
+ 526:                 created += int(is_created)
+ 527:                 updated += int(not is_created)
+ 528: 
+ 529:                 messages.success(
+ 530:                     request,
+ 531:                     f"Import complete. Created {created}, updated {updated}, skipped {skipped}.",
+ 532:                 )
+ 533: return redirect("stay_list")
+ 534:         form = StayImportForm()
+ 535:     return render(request, "stays/import.html", {"form": form})
+ 536: 
+ 537: 
+ 538: def appearance_page(request):
+ 539:     # keep it simple; renders a template that includes a top nav
+ 540:     return render(request, "stays/appearance.html")

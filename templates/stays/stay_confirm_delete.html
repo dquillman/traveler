@@ -1,0 +1,12 @@
+{% extends "stays/_base_stub.html" %}
+{% block content %}
+  <h1>Delete Stay</h1>
+  <div class="card">
+    <p>Are you sure you want to delete <strong>{{ stay }}</strong>?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" style="color:#ff6b6b;">Yes, delete</button>
+      <a href="{% url 'stays:edit' stay.pk %}" style="margin-left:12px;">Cancel</a>
+    </form>
+  </div>
+{% endblock %}

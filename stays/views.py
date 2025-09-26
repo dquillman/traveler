@@ -4,6 +4,12 @@ from urllib.parse import urlencode
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Sum, Avg
 from django.db.models.functions import TruncDate
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.utils.encoding import smart_str
+import csv
+from datetime import datetime
+from pathlib import Path
+from django.conf import settings
 
 from .models import Stay
 
@@ -176,3 +182,231 @@ def stay_charts(request):
         "has_rating": bool(rating_labels),
     }
     return render(request, "stays/charts.html", ctx)
+
+# --- Import/Export CSV ---
+def import_stays_csv(request):
+    """Upload a CSV and create Stay rows. Accepts flexible headers.
+
+    Supported headers (case-insensitive, trimmed):
+    - Park, City, State, City/St, Check in, Leave, #Nts, Rate/nt, Total, Fees, Paid?, Site, Notes
+    Unknown headers are ignored. Dates accept YYYY-MM-DD, MM/DD/YYYY.
+    """
+    if request.method == "GET":
+        # Allow rendering as an options page as well
+        return render(request, "stays/import.html", {
+            "default_delimiter": request.GET.get("delimiter", "auto"),
+            "default_dry": request.GET.get("dry_run") in {"1", "true", "yes"},
+        })
+
+    # POST
+    f = request.FILES.get("file")
+    if not f:
+        return render(request, "stays/import.html", {"error": "Please choose a CSV file."})
+
+    # Decode bytes safely; fall back to latin-1 if needed
+    raw = f.read()
+    try:
+        text = raw.decode("utf-8")
+    except Exception:
+        text = raw.decode("latin-1", errors="ignore")
+
+    # Determine delimiter
+    delim_choice = (request.POST.get("delimiter") or request.GET.get("delimiter") or "auto").lower()
+    delimiter = ","
+    if delim_choice in {"comma", ","}:
+        delimiter = ","
+    elif delim_choice in {"semicolon", ";"}:
+        delimiter = ";"
+    elif delim_choice in {"tab", "\t"}:
+        delimiter = "\t"
+    else:
+        # auto-sniff
+        try:
+            sniffer = csv.Sniffer()
+            sample = text[:2048]
+            dialect = sniffer.sniff(sample, delimiters=[",", ";", "\t"])
+            delimiter = dialect.delimiter
+        except Exception:
+            delimiter = ","
+
+    reader = csv.DictReader(text.splitlines(), delimiter=delimiter)
+    created = 0
+    dry_run = (request.POST.get("dry_run") or request.GET.get("dry_run")) in {"1", "true", "yes"}
+
+    def norm(h):
+        return (h or "").strip().lower()
+
+    # Build header map for quick lookup
+    header_keys = {norm(h): h for h in (reader.fieldnames or [])}
+
+    def get(row, *cands):
+        for c in cands:
+            key = header_keys.get(norm(c))
+            if key and key in row:
+                val = row.get(key)
+                if val is None:
+                    continue
+                s = str(val).strip()
+                if s != "":
+                    return s
+        return ""
+
+    def parse_date(val):
+        if not val:
+            return None
+        for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y"):
+            try:
+                return datetime.strptime(val, fmt).date()
+            except Exception:
+                pass
+        return None
+
+    def parse_money(val):
+        if not val:
+            return None
+        s = val.replace(",", "").replace("$", "").strip()
+        try:
+            from decimal import Decimal
+            return Decimal(s)
+        except Exception:
+            return None
+
+    def parse_bool(val):
+        s = (val or "").strip().lower()
+        return s in {"y", "yes", "true", "1"}
+
+    rows = list(reader)
+    for row in rows:
+        # Support combined City/St column like "Austin, TX"
+        city_st = get(row, "City/St", "City/State")
+        city = get(row, "City")
+        state = get(row, "State")
+        if (not city or not state) and city_st:
+            parts = [p.strip() for p in city_st.replace("/", ",").split(",")]
+            if len(parts) >= 2:
+                if not city:
+                    city = parts[0]
+                if not state:
+                    state = parts[1][:2]
+
+        obj = Stay(
+            park=get(row, "Park", "Campground", "Name"),
+            city=city,
+            state=(state or "")[:2].upper(),
+            check_in=parse_date(get(row, "Check in", "Check-in", "Arrival", "Start")),
+            leave_date=parse_date(get(row, "Leave", "Check out", "Departure", "End")),
+            price_night=parse_money(get(row, "Rate/nt", "Rate", "Price/night")),
+            total=parse_money(get(row, "Total")),
+            fees=parse_money(get(row, "Fees", "Taxes/fees")),
+            paid=parse_bool(get(row, "Paid?", "Paid")),
+            site=get(row, "Site"),
+            notes=get(row, "Notes"),
+        )
+        if not dry_run:
+            obj.save()
+        created += 1
+
+    return render(request, "stays/import_result.html", {"created": created, "dry_run": dry_run})
+
+
+def export_stays_csv(request):
+    """Stream all stays as CSV. Optionally save to server disk.
+
+    Query params:
+    - save=1           -> also save to disk
+    - filename=name    -> target file name (default: stays_export.csv)
+    - subdir=path      -> optional subdirectory under EXPORTS base
+
+    Base directory: settings.EXPORTS_DIR or MEDIA_ROOT/exports.
+    Paths are sanitized and constrained to the base directory.
+    """
+    headers = [
+        "Park", "City", "State", "Check in", "Leave", "#Nts",
+        "Rate/nt", "Total", "Fees", "Paid?", "Site", "Notes",
+    ]
+
+    # Always prepare CSV in-memory first so we can both save and/or stream.
+    from io import StringIO
+    buffer = StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(headers)
+
+    for s in Stay.objects.all().order_by("-check_in", "-id"):
+        writer.writerow([
+            smart_str(s.park or ""),
+            smart_str(s.city or ""),
+            smart_str((s.state or "").upper()[:2]),
+            s.check_in.isoformat() if s.check_in else "",
+            s.leave_date.isoformat() if s.leave_date else "",
+            s.nights or 0,
+            f"{s.price_night:.2f}" if s.price_night is not None else "",
+            f"{s.total:.2f}" if s.total is not None else "",
+            f"{s.fees:.2f}" if s.fees is not None else "",
+            "Yes" if s.paid else "No",
+            smart_str(s.site or ""),
+            smart_str(s.notes or ""),
+        ])
+    csv_text = buffer.getvalue()
+
+    # If requested, save to disk within a safe base directory.
+    saved_path = None
+    if request.GET.get("save") in {"1", "true", "yes"}:
+        base = getattr(settings, "EXPORTS_DIR", None)
+        if not base:
+            # default to MEDIA_ROOT/exports or BASE_DIR/exports
+            media = getattr(settings, "MEDIA_ROOT", None)
+            base = Path(media) / "exports" if media else Path(settings.BASE_DIR) / "exports"
+        base = Path(base)
+        base.mkdir(parents=True, exist_ok=True)
+
+        # Sanitize filename and subdir
+        import re
+        filename = request.GET.get("filename") or "stays_export.csv"
+        filename = re.sub(r"[^A-Za-z0-9._-]", "_", filename)
+        subdir = request.GET.get("subdir", "").strip()
+        subdir = re.sub(r"[^A-Za-z0-9._/-]", "_", subdir).strip("/")
+
+        target = base / subdir / filename if subdir else base / filename
+        # Resolve to avoid directory traversal
+        target = target.resolve()
+        if not str(target).startswith(str(base.resolve())):
+            return HttpResponseBadRequest("Invalid path.")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(csv_text, encoding="utf-8")
+        saved_path = str(target)
+
+    # Stream response to client
+    download_name = request.GET.get("filename") or "stays_export.csv"
+    response = HttpResponse(csv_text, content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{download_name}"'
+    if saved_path:
+        response["X-Saved-To"] = saved_path
+    return response
+
+
+def export_stays_options(request):
+    """Render a small form to choose export filename/subfolder and saving behavior."""
+    # Provide simple defaults
+    default_name = request.GET.get("filename") or "stays_export.csv"
+    default_subdir = request.GET.get("subdir") or ""
+    default_save = request.GET.get("save") in {"1", "true", "yes"}
+    # Compute display base path
+    base = getattr(settings, "EXPORTS_DIR", None)
+    if not base:
+        media = getattr(settings, "MEDIA_ROOT", None)
+        base = Path(media) / "exports" if media else Path(settings.BASE_DIR) / "exports"
+    base = str(Path(base))
+    return render(request, "stays/export.html", {
+        "default_name": default_name,
+        "default_subdir": default_subdir,
+        "default_save": default_save,
+        "exports_base": base,
+    })
+
+
+def import_stays_options(request):
+    """Render import page with options (delimiter, dry run)."""
+    return render(request, "stays/import.html", {
+        "default_delimiter": request.GET.get("delimiter", "auto"),
+        "default_dry": request.GET.get("dry_run") in {"1", "true", "yes"},
+    })

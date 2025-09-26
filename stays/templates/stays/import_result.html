@@ -3,7 +3,11 @@
 {% block content %}
   <div class="card">
     <h1>Import Complete</h1>
-    <p>Created {{ created }} stay{{ created|pluralize }}.</p>
+    {% if dry_run %}
+      <p>Simulated creation of {{ created }} stay{{ created|pluralize }}. No changes were saved.</p>
+    {% else %}
+      <p>Created {{ created }} stay{{ created|pluralize }}.</p>
+    {% endif %}
     <div class="actions"><a class="btn btn-outline" href="{% url 'stays:list' %}">Back to list</a></div>
   </div>
 {% endblock %}

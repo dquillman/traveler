@@ -28,13 +28,13 @@
 <body>
   <header>
     <div class="nav">
-      <a class="brand" href="{% url 'home' %}">Traveler</a>
-      <a href="{% url 'stay_list' %}">Stays</a>
-      <a href="{% url 'stay_create' %}">Add</a>
-      <a href="{% url 'stays_map' %}">Map</a>
-      <a href="{% url 'stay_charts' %}">Charts</a>
-      <a href="{% url 'import_stays_csv' %}">Import</a>
-      <a href="{% url 'export_stays_csv' %}">Export</a>
+      <a class="brand" href="{% url 'stays:list' %}">Traveler</a>
+      <a href="{% url 'stays:list' %}">Stays</a>
+      <a href="{% url 'stays:add' %}">Add</a>
+      <a href="{% url 'stays:map' %}">Map</a>
+      <a href="{% url 'stays:charts' %}">Charts</a>
+      <a href="{% url 'stays:import_options' %}">Import</a>
+      <a href="{% url 'stays:export_options' %}">Export</a>
       <span class="spacer"></span>
     </div>
   </header>

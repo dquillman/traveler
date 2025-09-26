@@ -1,0 +1,21 @@
+ 486:                         "rate_per_night": rate,
+ 487:                         "price_per_night": price,
+ 488:                         "elect_extra": elect_extra,
+ 489:                         "paid": paid,
+ 490:                         "site": (row.get("site") or ""),
+ 491:                         "check_out": check_out,
+ 492:                     },
+ 493:                 )
+ 494:                 created += int(is_created)
+ 495:                 updated += int(not is_created)
+ 496: 
+ 497:                 messages.success(
+ 498:                     request,
+ 499:                     f"Import complete. Created {created}, updated {updated}, skipped {skipped}.",
+ 500:                 )
+ 501: return redirect("stay_list")
+ 502:         form = StayImportForm()
+ 503:     return render(request, "stays/import.html", {"form": form})
+ 504: def appearance_page(request):
+ 505:     # keep it simple; renders a template that includes a top nav
+ 506:     return render(request, "stays/appearance.html")
