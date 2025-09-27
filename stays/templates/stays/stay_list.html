@@ -6,6 +6,65 @@
   </div>
 
   <div class="card" style="padding:0; overflow:auto;">
+    <form method="get" style="padding:12px; border-bottom:1px solid var(--border); display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+      <label>
+        <div class="muted">Search</div>
+        <input class="txt" type="text" name="q" value="{{ selected_q }}" placeholder="Park, city, state, notes" style="min-width:220px;">
+      </label>
+      <label>
+        <div class="muted">State</div>
+        <select name="state" multiple size="4" class="txt" style="min-width:100px;">
+          {% for st in state_choices %}
+            <option value="{{ st }}" {% if st in selected_states %}selected{% endif %}>{{ st }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <div class="muted">City</div>
+        <select name="city" multiple size="4" class="txt" style="min-width:140px;">
+          {% for ct in city_choices %}
+            <option value="{{ ct }}" {% if ct in selected_cities %}selected{% endif %}>{{ ct }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div>
+        <div class="muted">Rating</div>
+        {% for r in rating_choices %}
+          <label style="margin-right:6px;">
+            <input type="checkbox" name="rating" value="{{ r }}" {% if r|stringformat:'s' in selected_ratings %}checked{% endif %}> {{ r }}
+          </label>
+        {% endfor %}
+      </div>
+      <label>
+        <div class="muted">Start</div>
+        <input class="txt" type="date" name="start" value="{{ selected_start }}">
+      </label>
+      <label>
+        <div class="muted">End</div>
+        <input class="txt" type="date" name="end" value="{{ selected_end }}">
+      </label>
+      <label>
+        <div class="muted">Paid</div>
+        <select name="paid" class="txt">
+          <option value="">All</option>
+          <option value="1" {% if selected_paid == '1' %}selected{% endif %}>Yes</option>
+          <option value="0" {% if selected_paid == '0' %}selected{% endif %}>No</option>
+        </select>
+      </label>
+      <label>
+        <div class="muted">Min $/nt</div>
+        <input class="txt" type="number" step="0.01" name="min_price" value="{{ selected_min_price }}" style="width:120px;">
+      </label>
+      <label>
+        <div class="muted">Max $/nt</div>
+        <input class="txt" type="number" step="0.01" name="max_price" value="{{ selected_max_price }}" style="width:120px;">
+      </label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn" type="submit">Apply</button>
+        <a class="btn btn-outline" href="{% url 'stays:list' %}">Clear</a>
+        <a class="btn btn-outline" href="{% url 'stays:map' %}?{{ map_query }}">Map View</a>
+      </div>
+    </form>
     <table class="table">
       <thead>
         <tr>
@@ -61,4 +120,43 @@
       </tbody>
     </table>
   </div>
+  <script>
+    (function(){
+      const citiesByState = {{ cities_by_state|safe }};
+      const stateSel = document.querySelector('select[name="state"]');
+      const citySel  = document.querySelector('select[name="city"]');
+      if (!stateSel || !citySel) return;
+
+      function getSelected(el){
+        return Array.from(el.options).filter(o => o.selected).map(o => o.value);
+      }
+      const allCities = Array.from(new Set(Object.values(citiesByState).flat())).sort();
+
+      function rebuildCityOptions(){
+        const selectedStates = getSelected(stateSel);
+        let allowed = [];
+        if (selectedStates.length === 0){
+          allowed = allCities.slice();
+        } else {
+          const set = new Set();
+          selectedStates.forEach(st => {
+            (citiesByState[st.toUpperCase()] || []).forEach(c => set.add(c));
+          });
+          allowed = Array.from(set).sort();
+        }
+        const prevSelected = new Set(getSelected(citySel));
+        citySel.innerHTML = '';
+        allowed.forEach(ct => {
+          const opt = document.createElement('option');
+          opt.value = ct; opt.textContent = ct;
+          if (prevSelected.has(ct)) opt.selected = true;
+          citySel.appendChild(opt);
+        });
+      }
+
+      stateSel.addEventListener('change', rebuildCityOptions);
+      // In case initial HTML not aligned to mapping, sync once on load
+      rebuildCityOptions();
+    })();
+  </script>
 {% endblock %}

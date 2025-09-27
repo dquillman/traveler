@@ -2,7 +2,7 @@ import json
 from urllib.parse import urlencode
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Count, Sum, Avg
+from django.db.models import Count, Sum, Avg, Q
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils.encoding import smart_str
@@ -29,6 +29,12 @@ def _apply_stay_filters(qs, request):
     states = request.GET.getlist("state") or ([request.GET.get("state")] if request.GET.get("state") else [])
     cities = request.GET.getlist("city") or ([request.GET.get("city")] if request.GET.get("city") else [])
     ratings = request.GET.getlist("rating") or ([request.GET.get("rating")] if request.GET.get("rating") else [])
+    q = (request.GET.get("q") or "").strip()
+    start = (request.GET.get("start") or "").strip()
+    end = (request.GET.get("end") or "").strip()
+    paid = (request.GET.get("paid") or "").strip()
+    min_price = (request.GET.get("min_price") or "").strip()
+    max_price = (request.GET.get("max_price") or "").strip()
 
     states = [s for s in states if s]
     cities = [c for c in cities if c]
@@ -40,7 +46,8 @@ def _apply_stay_filters(qs, request):
             pass
 
     if states:
-        qs = qs.filter(state__in=states)
+        states_up = [s.upper() for s in states]
+        qs = qs.filter(state__in=states_up)
     if cities:
         qs = qs.filter(city__in=cities)
 
@@ -48,39 +55,123 @@ def _apply_stay_filters(qs, request):
     if ratings_clean and "rating" in field_names:
         qs = qs.filter(rating__in=ratings_clean)
 
+    if q:
+        qs = qs.filter(
+            Q(park__icontains=q)
+            | Q(city__icontains=q)
+            | Q(state__icontains=q)
+            | Q(site__icontains=q)
+            | Q(notes__icontains=q)
+        )
+
+    # Dates: filter check_in >= start, leave_date <= end
+    from datetime import date
+    def _parse_date(s: str):
+        if not s:
+            return None
+        for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y"):
+            try:
+                return datetime.strptime(s, fmt).date()
+            except Exception:
+                pass
+        return None
+    d_start = _parse_date(start)
+    d_end = _parse_date(end)
+    if d_start:
+        qs = qs.filter(check_in__isnull=False, check_in__gte=d_start)
+    if d_end:
+        qs = qs.filter(leave_date__isnull=False, leave_date__lte=d_end)
+
+    if paid in {"0", "1"}:
+        qs = qs.filter(paid=(paid == "1"))
+
+    from decimal import Decimal, InvalidOperation
+    def _dec(s):
+        if not s:
+            return None
+        try:
+            return Decimal(s)
+        except InvalidOperation:
+            return None
+    dmin = _dec(min_price)
+    dmax = _dec(max_price)
+    if dmin is not None:
+        qs = qs.filter(price_night__isnull=False, price_night__gte=dmin)
+    if dmax is not None:
+        qs = qs.filter(price_night__isnull=False, price_night__lte=dmax)
+
     return qs
 
 def stay_list(request):
     qs = Stay.objects.all()
+    # Read selections first so we can drive dependent choices
+    selected_states  = request.GET.getlist("state")  or ([request.GET.get("state")]  if request.GET.get("state")  else [])
+    selected_cities  = request.GET.getlist("city")   or ([request.GET.get("city")]   if request.GET.get("city")   else [])
+    selected_ratings = request.GET.getlist("rating") or ([request.GET.get("rating")] if request.GET.get("rating") else [])
+    selected_q = (request.GET.get("q") or "").strip()
+    selected_start = (request.GET.get("start") or "").strip()
+    selected_end = (request.GET.get("end") or "").strip()
+    selected_paid = (request.GET.get("paid") or "").strip()
+    selected_min_price = (request.GET.get("min_price") or "").strip()
+    selected_max_price = (request.GET.get("max_price") or "").strip()
+    selected_ratings = [str(r) for r in selected_ratings]
+
+    # Choices
     state_choices = list(Stay.objects.values_list("state", flat=True)
                          .exclude(state__isnull=True).exclude(state__exact="")
                          .distinct().order_by("state"))
-    city_choices  = list(Stay.objects.values_list("city", flat=True)
+    if selected_states:
+        states_up = [s.upper() for s in selected_states]
+        city_base = Stay.objects.filter(state__in=states_up)
+    else:
+        city_base = Stay.objects
+    city_choices  = list(city_base.values_list("city", flat=True)
                          .exclude(city__isnull=True).exclude(city__exact="")
                          .distinct().order_by("city"))
     rating_choices = [1, 2, 3, 4, 5]
 
+    # Apply filters to listing queryset
     qs = _apply_stay_filters(qs, request)
 
-    selected_states  = request.GET.getlist("state")  or ([request.GET.get("state")]  if request.GET.get("state")  else [])
-    selected_cities  = request.GET.getlist("city")   or ([request.GET.get("city")]   if request.GET.get("city")   else [])
-    selected_ratings = request.GET.getlist("rating") or ([request.GET.get("rating")] if request.GET.get("rating") else [])
-    selected_ratings = [str(r) for r in selected_ratings]
+    # Build mapping of state -> cities for client-side dynamic filtering
+    pairs = (Stay.objects
+             .values_list("state", "city")
+             .exclude(state__isnull=True).exclude(state__exact="")
+             .exclude(city__isnull=True).exclude(city__exact="")
+             .distinct())
+    cities_by_state = {}
+    for st, ct in pairs:
+        st_up = (st or "").upper()
+        cities_by_state.setdefault(st_up, set()).add(ct)
+    cities_by_state = {k: sorted(v) for k, v in cities_by_state.items()}
 
     qs_params = []
     for s in selected_states:  qs_params.append(("state", s))
     for c in selected_cities:  qs_params.append(("city", c))
     for r in selected_ratings: qs_params.append(("rating", r))
+    if selected_q: qs_params.append(("q", selected_q))
+    if selected_start: qs_params.append(("start", selected_start))
+    if selected_end: qs_params.append(("end", selected_end))
+    if selected_paid in {"0","1"}: qs_params.append(("paid", selected_paid))
+    if selected_min_price: qs_params.append(("min_price", selected_min_price))
+    if selected_max_price: qs_params.append(("max_price", selected_max_price))
     map_query = urlencode(qs_params)
 
     return render(request, "stays/stay_list.html", {
         "stays": qs,
         "state_choices": state_choices,
         "city_choices": city_choices,
+        "cities_by_state": json.dumps(cities_by_state),
         "rating_choices": rating_choices,
         "selected_states": selected_states,
         "selected_cities": selected_cities,
         "selected_ratings": selected_ratings,
+        "selected_q": selected_q,
+        "selected_start": selected_start,
+        "selected_end": selected_end,
+        "selected_paid": selected_paid,
+        "selected_min_price": selected_min_price,
+        "selected_max_price": selected_max_price,
         "map_query": map_query,
         "stars": [1, 2, 3, 4, 5],
     })
