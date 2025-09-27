@@ -72,10 +72,8 @@
           <th>Leave</th>
           <th># Nts</th>
           <th>Rate/nt</th>
-          <th>Total</th>
           <th>Fees</th>
           <th>Rating <span class="muted" style="font-weight:normal; font-size:0.85em; opacity:0.75;">(edit to change)</span></th>
-          <th>Paid?</th>
           <th>Site</th>
           <th></th>
         </tr>
@@ -97,7 +95,6 @@
             <td>{{ s.leave_date|date:"Y-m-d"|default:'&mdash;' }}</td>
             <td class="num">{{ s.nights|default:0 }}</td>
             <td class="num">{{ s.price_night|default:0|floatformat:2 }}</td>
-            <td class="num">{{ s.total|default:0|floatformat:2 }}</td>
             <td class="num">{{ s.fees|default:0|floatformat:2 }}</td>
             <td>
               <div aria-label="Rating" title="Edit the stay to change rating">
@@ -106,12 +103,11 @@
                 {% endfor %}
               </div>
             </td>
-            <td>{% if s.paid %}Yes{% else %}No{% endif %}</td>
             <td>{{ s.site|default:'' }}</td>
             <td><a class="btn btn-outline" href="{% url 'stays:edit' s.pk %}">Edit</a></td>
           </tr>
         {% empty %}
-          <tr><td colspan="13" style="padding:16px;">No stays yet</td></tr>
+          <tr><td colspan="12" style="padding:16px;">No stays yet</td></tr>
         {% endfor %}
       </tbody>
     </table>
