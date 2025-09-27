@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Sum, Avg, Q
 from django.db.models.functions import TruncDate
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.utils.encoding import smart_str
 import csv
 from datetime import datetime
@@ -485,14 +485,18 @@ def import_stays_csv(request):
             wb = openpyxl.load_workbook(BytesIO(f.read()), data_only=True, read_only=True)
             ws = wb[sheet_name] if (sheet_name and sheet_name in wb.sheetnames) else wb.active
             header = None
+            header_row_index = None
+            row_index = 0
             for r in ws.iter_rows(values_only=True):
+                row_index += 1
                 if r and any(v is not None and str(v).strip() != '' for v in r):
                     header = [str(v).strip() if v is not None else '' for v in r]
+                    header_row_index = row_index
                     break
             if not header:
                 return render(request, "stays/import.html", {"error": "Could not find a header row in the selected sheet."})
             # Build row dicts
-            start_row = 2
+            start_row = (header_row_index or 1) + 1
             for r in ws.iter_rows(min_row=start_row, values_only=True):
                 if r is None:
                     continue
@@ -542,8 +546,12 @@ def import_stays_csv(request):
 
     def norm(h):
         return (h or "").strip().lower()
+    def norm2(h):
+        # looser normalization for fuzzy header matching
+        return ''.join(ch for ch in norm(h) if ch.isalnum())
 
     def get(row, *cands):
+        # try exact header map first
         for c in cands:
             key = header_keys.get(norm(c))
             if key and key in row:
@@ -553,6 +561,25 @@ def import_stays_csv(request):
                 s = str(val).strip()
                 if s != "":
                     return s
+        # fuzzy: match by normalized containment (e.g., "park name" -> "park")
+        row_keys = list(row.keys())
+        for c in cands:
+            nc = norm2(c)
+            if not nc:
+                continue
+            for rk in row_keys:
+                if not rk:
+                    continue
+                nr = norm2(rk)
+                if not nr:
+                    continue
+                if nc in nr or nr in nc:
+                    val = row.get(rk)
+                    if val is None:
+                        continue
+                    s = str(val).strip()
+                    if s != "":
+                        return s
         return ""
 
     def parse_date(val):
@@ -630,7 +657,7 @@ def import_stays_csv(request):
                         state = cparts[1].strip()[:2]
 
         obj = Stay(
-            park=get(row, "Park", "Campground", "Name"),
+            park=get(row, "Park", "Campground", "Name", "Park Name", "Camp Name", "Campground Name", "Location", "Place"),
             city=city,
             state=(state or "")[:2].upper(),
             check_in=parse_date(get(row, "Check in", "Check-in", "Arrival", "Start")),
@@ -796,3 +823,26 @@ def import_stays_options(request):
         "default_delimiter": request.GET.get("delimiter", "auto"),
         "default_dry": request.GET.get("dry_run") in {"1", "true", "yes"},
     })
+
+
+def import_probe_sheets(request):
+    """Return Excel sheet names for a posted .xlsx file.
+
+    POST: multipart with 'file'
+    Response: { sheets: [..] } or { error: '...' }
+    """
+    if request.method != 'POST':
+        return JsonResponse({"error": "POST required"}, status=400)
+    f = request.FILES.get('file')
+    if not f:
+        return JsonResponse({"error": "Missing file"}, status=400)
+    name = (getattr(f, 'name', '') or '').lower()
+    if not name.endswith(('.xlsx', '.xlsm', '.xltx', '.xltm')):
+        return JsonResponse({"error": "Not an Excel file"}, status=400)
+    try:
+        import openpyxl  # type: ignore
+        from io import BytesIO
+        wb = openpyxl.load_workbook(BytesIO(f.read()), read_only=True)
+        return JsonResponse({"sheets": wb.sheetnames})
+    except Exception as e:
+        return JsonResponse({"error": f"Failed to read Excel: {e}"}, status=400)
