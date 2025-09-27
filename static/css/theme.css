@@ -1,40 +1,40 @@
 :root {
-  /* sensible defaults (dark) */
-  --bg: #0b1220;
-  --text: #e6edf3;
-  --muted: #93a4b3;
-  --card: #111827;
-  --panel: #111827;
-  --border: #1f2630;
-  --accent: #2563eb;
-  --accent-contrast: #ffffff;
+  /* Travel Wonderers brand – dark-first palette */
+  --bg: #0a1320;            /* midnight blue */
+  --text: #e8f2ff;          /* soft ice */
+  --muted: #9cb4cf;         /* steel sky */
+  --card: #0f1b2e;          /* deep navy */
+  --panel: linear-gradient(90deg, #0f1b2e 0%, #152a46 100%);
+  --border: #1b2942;        /* ridge */
+  --accent: #1ec8c8;        /* sea teal */
+  --accent-contrast: #071316;
   --fg: var(--text);
-  --success: #16a34a; /* default green */
-  --danger: #dc2626;  /* default red */
+  --success: #22c55e;       /* emerald trail */
+  --danger: #ef4444;        /* campfire red */
 }
 
 body[data-theme="dark"] {
-  --bg: #0b1220;
-  --text: #e6edf3;
-  --muted: #93a4b3;
-  --card: #111827;
-  --panel: #111827;
-  --border: #1f2630;
-  --accent: #2563eb;
-  --accent-contrast: #ffffff;
+  --bg: #0a1320;
+  --text: #e8f2ff;
+  --muted: #9cb4cf;
+  --card: #0f1b2e;
+  --panel: linear-gradient(90deg, #0f1b2e 0%, #152a46 100%);
+  --border: #1b2942;
+  --accent: #1ec8c8;
+  --accent-contrast: #071316;
   --fg: var(--text);
-  --success: #16a34a;
-  --danger: #dc2626;
+  --success: #22c55e;
+  --danger: #ef4444;
 }
 
 body[data-theme="light"] {
-  --bg: #f6f7f8;
-  --text: #111111;
-  --muted: #666666;
+  --bg: #f4f8fb;
+  --text: #0e1b2b;
+  --muted: #5d738a;
   --card: #ffffff;
-  --panel: #ffffff;
-  --border: #e5e7eb;
-  --accent: #0d6efd;
+  --panel: linear-gradient(90deg, #ffffff 0%, #eef5fb 100%);
+  --border: #dbe5ef;
+  --accent: #0fb3b9;
   --accent-contrast: #ffffff;
   --fg: var(--text);
   --success: #16a34a;
@@ -51,13 +51,13 @@ body[data-theme="light"] {
   border-radius: 8px;
   text-decoration: none;
 }
-.btn:hover, .btn:focus { filter: brightness(1.05); box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+.btn:hover, .btn:focus { filter: brightness(1.05); box-shadow: 0 8px 28px rgba(0,0,0,.35); transform: translateY(-1px); }
 .btn-outline {
   background: transparent;
   color: var(--text);
   border: 1px solid var(--text);
 }
-.btn-outline:hover, .btn-outline:focus { background: rgba(255,255,255,0.06); }
+.btn-outline:hover, .btn-outline:focus { background: rgba(255,255,255,0.07); border-color: var(--accent); color: var(--text); }
 .btn-link { color: var(--accent); text-decoration: underline; border: 0; background: transparent; padding: 0; }
 .btn-success { background: var(--success); border-color: var(--success); color: #ffffff; }
 .btn-danger  { background: var(--danger);  border-color: var(--danger);  color: #ffffff; }
@@ -66,7 +66,7 @@ body[data-theme="light"] {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  box-shadow: 0 12px 36px rgba(0,0,0,.35);
 }
 
 /* Common UI bits used across pages */
@@ -86,7 +86,7 @@ body[data-theme="light"] {
   border-bottom: 1px solid var(--border);
 }
 .table th { text-align: left; color: var(--muted); }
-.table tbody tr:hover { background: rgba(255,255,255,0.04); }
+.table tbody tr:hover { background: rgba(255,255,255,0.05); }
 
 /* Modern text inputs */
 .txt {

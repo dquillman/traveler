@@ -43,10 +43,6 @@
         <div class="muted">End</div>
         <input class="txt" type="date" name="end" value="{{ selected_end }}">
       </label>
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" name="missing_coords" value="1" {% if selected_missing %}checked{% endif %}>
-        <span class="muted">Missing coords</span>
-      </label>
       <label>
         <div class="muted">Sort</div>
         <select name="sort" class="txt">
@@ -184,7 +180,7 @@
         const b0 = mk('Last 30 days', ()=>setPresetRange(30));
         const b1 = mk('Last 90 days', ()=>setPresetRange(90));
         const b2 = mk('This Year', setThisYear);
-        const b3 = mk('No coords', ()=>{ const cb=form.querySelector('input[name="missing_coords"]'); if (cb) { cb.checked=true; } form.submit(); });
+        const b3 = mk('No coords', ()=>{ const cb=form.querySelector('input[name="missing_coords"]'); if (cb) { cb.checked=true; } else { const h=document.createElement('input'); h.type='hidden'; h.name='missing_coords'; h.value='1'; form.appendChild(h);} form.submit(); });
         actionsBar.appendChild(b0); actionsBar.appendChild(b1); actionsBar.appendChild(b2); actionsBar.appendChild(b3);
       }
     })();
