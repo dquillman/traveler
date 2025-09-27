@@ -89,11 +89,25 @@ def stay_map(request):
     qs = qs.exclude(latitude__isnull=True).exclude(longitude__isnull=True)
     points = []
     for s in qs:
+        lat = float(s.latitude) if s.latitude is not None else None
+        lng = float(s.longitude) if s.longitude is not None else None
+        title = f"{getattr(s, 'park', '')}".strip() or f"Stay {s.pk}"
+        city = f"{getattr(s, 'city', '')}".strip()
+        state = f"{getattr(s, 'state', '')}".strip()
+        subtitle = f"{city}, {state}".strip(", ")
         points.append({
-            "lat": float(s.latitude) if s.latitude is not None else None,
-            "lng": float(s.longitude) if s.longitude is not None else None,
-            "title": f"{getattr(s, 'park', '')}".strip() or f"Stay {s.pk}",
-            "subtitle": f"{getattr(s, 'city', '')}, {getattr(s, 'state', '')}".strip(", "),
+            # Our newer template keys
+            "lat": lat,
+            "lng": lng,
+            "title": title,
+            "subtitle": subtitle,
+            "pk": s.pk,
+            # Legacy project-level template keys
+            "latitude": lat,
+            "longitude": lng,
+            "name": title,
+            "city": city,
+            "state": state,
         })
     return render(request, "stays/map.html", {"stays_json": json.dumps(points)})
 
@@ -271,6 +285,19 @@ def import_stays_csv(request):
         except Exception:
             return None
 
+    def parse_coord(val):
+        if not val:
+            return None
+        s = str(val).strip()
+        try:
+            from decimal import Decimal
+            return Decimal(s)
+        except Exception:
+            try:
+                return Decimal(str(float(s)))
+            except Exception:
+                return None
+
     def parse_bool(val):
         s = (val or "").strip().lower()
         return s in {"y", "yes", "true", "1"}
@@ -302,6 +329,13 @@ def import_stays_csv(request):
             site=get(row, "Site"),
             notes=get(row, "Notes"),
         )
+        # Optional latitude/longitude columns
+        lat = parse_coord(get(row, "Latitude", "Lat"))
+        lng = parse_coord(get(row, "Longitude", "Long", "Lng"))
+        if lat is not None:
+            obj.latitude = lat
+        if lng is not None:
+            obj.longitude = lng
         if not dry_run:
             obj.save()
         created += 1

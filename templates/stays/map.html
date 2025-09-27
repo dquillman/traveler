@@ -20,12 +20,29 @@
     const stays = JSON.parse(document.getElementById('stays-data').textContent || '[]');
     const markers = [];
     stays.forEach(s => {
-      if (typeof s.latitude === 'number' && typeof s.longitude === 'number') {
-        const m = L.marker([s.latitude, s.longitude])
-          .addTo(map)
-          .bindPopup(`<strong>${s.name ?? 'Stay'}</strong><br>${s.city ?? ''}, ${s.state ?? ''}`);
-        markers.push(m);
-      }
+      const hasCoords = (typeof s.latitude === 'number' && typeof s.longitude === 'number') ||
+                        (typeof s.lat === 'number' && typeof s.lng === 'number');
+      if (!hasCoords) return;
+
+      const lat = typeof s.latitude === 'number' ? s.latitude : s.lat;
+      const lng = typeof s.longitude === 'number' ? s.longitude : s.lng;
+      const name = s.name ?? s.title ?? 'Stay';
+      const city = s.city ?? '';
+      const state = s.state ?? '';
+      const pk = s.pk;
+      const viewUrl = pk ? `/stays/${pk}/` : '#';
+      const editUrl = pk ? `/stays/${pk}/edit/` : '#';
+      const html = `
+        <div style="min-width:200px">
+          <div style="font-weight:700; margin-bottom:4px;">${name}</div>
+          <div style="color:#666; margin-bottom:8px;">${city}${city && state ? ', ' : ''}${state}</div>
+          ${pk ? `<div style=\"display:flex; gap:8px;\"><a class=\"btn btn-outline\" href=\"${viewUrl}\">View</a><a class=\"btn\" href=\"${editUrl}\">Edit</a></div>` : ''}
+        </div>`;
+
+      const m = L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup(html);
+      markers.push(m);
     });
 
     if (markers.length) {
