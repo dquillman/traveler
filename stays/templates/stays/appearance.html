@@ -33,6 +33,17 @@
       <a class="btn" href="{% url 'stays:map' %}">View Map</a>
     </form>
   </div>
+
+  <div class="card" style="margin-top:12px; border-color:#7f1d1d;">
+    <h2 style="margin-top:0; color:#ef4444;">Danger Zone</h2>
+    <p class="muted">This permanently deletes all stays from the database. There is no undo.</p>
+    <form method="post" action="{% url 'stays:appearance_purge' %}"
+          onsubmit="return confirm('Are you sure you want to delete ALL stays? This cannot be undone.');"
+          style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      {% csrf_token %}
+      <button class="btn btn-danger" type="submit">Delete All Stays</button>
+    </form>
+  </div>
   <script>
     (function(){
       const current = (document.body.dataset.theme || '{{ site_appearance.theme|default:"dark" }}').toLowerCase();

@@ -12,6 +12,7 @@ urlpatterns = [
     path('<int:pk>/delete/', views.stay_delete, name='delete'),
     path('appearance/', views.appearance_page, name='appearance'),
     path('appearance/geocode/', views.appearance_geocode, name='appearance_geocode'),
+    path('appearance/purge/', views.appearance_purge, name='appearance_purge'),
     path('map/', views.stay_map, name='map'),
     path('map/geocode/', views.geocode_missing, name='map_geocode'),
     path('charts/', views.stay_charts, name='charts'),

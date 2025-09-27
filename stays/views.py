@@ -264,6 +264,15 @@ def appearance_geocode(request):
     messages.success(request, f"Geocoded {updated} stay(s).")
     return redirect('stays:appearance')
 
+def appearance_purge(request):
+    """Delete all Stay rows (POST only). Use with care."""
+    if request.method != 'POST':
+        return HttpResponseBadRequest('POST required')
+    total = Stay.objects.count()
+    Stay.objects.all().delete()
+    messages.success(request, f"Purged {total} stay(s).")
+    return redirect('stays:appearance')
+
 def geocode_missing(request):
     """Geocode stays missing coordinates. POST only. Optional ?limit=..."""
     if request.method != 'POST':
