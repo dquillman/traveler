@@ -3,6 +3,7 @@
     <div style="display:flex; align-items:center; gap:.5rem;">
       <a class="brand" href="/">Traveler</a>
       <span class="version-pill">{{ app_version }}</span>
+      <span class="count-pill">Total Stays: {{ stay_count }}</span>
     </div>
     <ul class="menu">
       <li><a href="{% url 'stays:list' %}">Stays</a></li>
@@ -15,4 +16,3 @@
     </ul>
   </nav>
 </header>
-

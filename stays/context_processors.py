@@ -21,6 +21,13 @@ def site_appearance(request):
     except Exception:
         pass
 
+    # Compute a total stays count for banner display
+    try:
+        from .models import Stay  # local import to avoid import-time issues
+        stay_count = Stay.objects.count()
+    except Exception:
+        stay_count = 0
+
     return {
         "site_appearance": {
             "site_name": site_name,
@@ -30,4 +37,5 @@ def site_appearance(request):
             "theme": theme,
         },
         "app_version": getattr(settings, "APP_VERSION", "v0.1.0"),
+        "stay_count": stay_count,
     }
