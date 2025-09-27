@@ -7,6 +7,10 @@
   <p class="mt-4">
     <a class="btn" href="{% url 'stays:list' %}">Back to list</a>
   </p>
+  <form method="post" action="{% url 'stays:map_geocode' %}">
+    {% csrf_token %}
+    <button class="btn btn-outline" type="submit">Geocode Missing Coordinates</button>
+  </form>
 </div>
 
 <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css" onerror="this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'"/>
@@ -31,7 +35,8 @@
       maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    const group = L.featureGroup();
+    const markers = [];
+    const cluster = (L.markerClusterGroup ? L.markerClusterGroup() : null);
     stays.forEach(s => {
       if (s.lat == null || s.lng == null) return;
       const viewUrl = `/stays/${s.pk}/`;
@@ -45,11 +50,22 @@
             <a class="btn" href="${editUrl}">Edit</a>
           </div>
         </div>`;
-      const m = L.circleMarker([s.lat, s.lng], { radius: 7, weight: 2, color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.9 }).bindPopup(html);
-      group.addLayer(m);
+      if (cluster) {
+        const icon = L.divIcon({className:'dot-marker', html:'', iconSize:[12,12], iconAnchor:[6,6]});
+        const m = L.marker([s.lat, s.lng], { icon }).bindPopup(html);
+        cluster.addLayer(m);
+        markers.push(m);
+      } else {
+        const m = L.circleMarker([s.lat, s.lng], { radius: 7, weight: 2, color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.9 }).bindPopup(html);
+        markers.push(m);
+        m.addTo(map);
+      }
     });
-    if (group.getLayers().length) {
-      group.addTo(map);
+    if (cluster && markers.length) {
+      map.addLayer(cluster);
+      map.fitBounds(cluster.getBounds().pad(0.2));
+    } else if (markers.length) {
+      const group = L.featureGroup(markers);
       map.fitBounds(group.getBounds().pad(0.2));
     }
   });

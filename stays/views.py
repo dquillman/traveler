@@ -10,6 +10,7 @@ import csv
 from datetime import datetime
 from pathlib import Path
 from django.conf import settings
+from django.contrib import messages
 
 from .models import Stay
 
@@ -110,6 +111,30 @@ def stay_map(request):
             "state": state,
         })
     return render(request, "stays/map.html", {"stays_json": json.dumps(points)})
+
+
+def geocode_missing(request):
+    """Geocode stays missing coordinates. POST only. Optional ?limit=..."""
+    if request.method != 'POST':
+        return HttpResponseBadRequest('POST required')
+    try:
+        limit = int(request.GET.get('limit', '100'))
+    except Exception:
+        limit = 100
+    from .utils import build_query_from_stay, geocode_address
+    qs = Stay.objects.filter(latitude__isnull=True) | Stay.objects.filter(longitude__isnull=True)
+    updated = 0
+    for s in qs[:limit]:
+        q = build_query_from_stay(s)
+        if not q:
+            continue
+        coords = geocode_address(q)
+        if coords:
+            s.latitude, s.longitude = coords
+            s.save(update_fields=['latitude', 'longitude'])
+            updated += 1
+    messages.success(request, f"Geocoded {updated} stay(s).")
+    return redirect('stays:map')
 
 def stay_detail(request, pk):
     obj = get_object_or_404(Stay, pk=pk)
