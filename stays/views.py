@@ -606,6 +606,13 @@ def import_stays_csv(request):
             site=get(row, "Site"),
             notes=get(row, "Notes"),
         )
+
+        # Skip completely empty location/date rows: no City, no State, no Check in, no Leave
+        empty_loc_dates = (not (obj.city or "").strip()) and (not (obj.state or "").strip()) \
+                          and (obj.check_in is None) and (obj.leave_date is None)
+        if empty_loc_dates:
+            skipped += 1
+            continue
         # Optional latitude/longitude columns
         lat = parse_coord(get(row, "Latitude", "Lat"))
         lng = parse_coord(get(row, "Longitude", "Long", "Lng"))
