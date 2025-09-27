@@ -10,5 +10,6 @@ urlpatterns = [
     # Send to options pages so users can choose location/behavior interactively
     path('import/', SimpleRedirect.as_view(url=reverse_lazy('stays:import_options'), permanent=False)),
     path('export/', SimpleRedirect.as_view(url=reverse_lazy('stays:export_options'), permanent=False)),
+    path('appearance/', SimpleRedirect.as_view(url=reverse_lazy('stays:appearance'), permanent=False)),
     path('admin/', admin.site.urls),
 ]

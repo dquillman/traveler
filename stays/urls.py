@@ -8,6 +8,7 @@ urlpatterns = [
     path('add/', views.stay_add, name='add'),
     path('<int:pk>/', views.stay_detail, name='detail'),
     path('<int:pk>/edit/', views.stay_edit, name='edit'),
+    path('appearance/', views.appearance_page, name='appearance'),
     path('map/', views.stay_map, name='map'),
     path('map/geocode/', views.geocode_missing, name='map_geocode'),
     path('charts/', views.stay_charts, name='charts'),

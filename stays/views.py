@@ -113,6 +113,16 @@ def stay_map(request):
     return render(request, "stays/map.html", {"stays_json": json.dumps(points)})
 
 
+def appearance_page(request):
+    # Clear any stale success/info messages from prior actions so this page stays clean
+    try:
+        from django.contrib import messages as _msgs
+        list(_msgs.get_messages(request))
+    except Exception:
+        pass
+    return render(request, "stays/appearance.html")
+
+
 def geocode_missing(request):
     """Geocode stays missing coordinates. POST only. Optional ?limit=..."""
     if request.method != 'POST':

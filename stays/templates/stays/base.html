@@ -1,12 +1,12 @@
-﻿<!doctype html>
+<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>{{ site_appearance.site_name|default:"Traveler" }}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link href="/static/css/theme.css" rel="stylesheet">
   <style>
-    :root { --pri: {{ site_appearance.primary_color|default:"#0d6efd" }}; --fg:#e6edf3; --bg:#0b1220; --panel:#111827; --muted:#93a4b3; }
+    :root { --pri: {{ site_appearance.primary_color|default:"#0d6efd" }}; }
     html, body { height:100%; }
     body {
       margin:0; color:var(--fg); background:var(--bg);
@@ -33,12 +33,13 @@
   </style>
   {% block head %}{% endblock %}
 </head>
-<body>
+<body data-theme="{{ site_appearance.theme|default:'dark' }}">
   <nav class="nav">
     <span class="brand">{{ site_appearance.site_name|default:"Traveler" }}</span>
     <a href="{% url 'stays:list' %}">Home</a>
     <a href="{% url 'stays:map' %}">Map</a>
     <a href="{% url 'stays:charts' %}">Charts</a>
+    <a href="{% url 'stays:appearance' %}">Appearance</a>
     <a href="{% url 'stays:import_options' %}">Import</a>
     <a href="{% url 'stays:export_options' %}">Export</a>
     <a href="/admin/">Admin</a>

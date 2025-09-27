@@ -1,13 +1,46 @@
-﻿{% extends "stays/base.html" %}
+{% extends "stays/base.html" %}
 {% block content %}
   <div class="card">
     <h1 style="margin-top:0;">Appearance</h1>
-    <p class="muted">Using defaults. The <code>SiteAppearance</code> model is optional; the site still works.</p>
+    <p class="muted">Toggle the theme below. This preference is saved in your browser.</p>
+
+    <div style="display:flex; gap:12px; align-items:center; margin:10px 0;">
+      <span>Theme:</span>
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="radio" name="theme" value="dark" />
+        <span>Dark</span>
+      </label>
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="radio" name="theme" value="light" />
+        <span>Light</span>
+      </label>
+      <button id="apply-theme" class="btn btn-outline" type="button">Apply</button>
+    </div>
+
     <dl>
       <dt>Site Name</dt><dd>{{ site_appearance.site_name }}</dd>
       <dt>Primary Color</dt><dd>{{ site_appearance.primary_color }}</dd>
       <dt>Secondary Color</dt><dd>{{ site_appearance.secondary_color }}</dd>
     </dl>
   </div>
+  <script>
+    (function(){
+      const current = (document.body.dataset.theme || '{{ site_appearance.theme|default:"dark" }}').toLowerCase();
+      const radios = Array.from(document.querySelectorAll('input[name="theme"]'));
+      const btn = document.getElementById('apply-theme');
+      const active = radios.find(r => r.value === current) || radios[0];
+      if (active) active.checked = true;
+      function setCookie(name, value, days){
+        const d = new Date();
+        d.setTime(d.getTime() + (days*24*60*60*1000));
+        document.cookie = `${name}=${value}; expires=${d.toUTCString()}; path=/`;
+      }
+      btn.addEventListener('click', () => {
+        const sel = radios.find(r => r.checked);
+        const val = sel ? sel.value : 'dark';
+        document.body.setAttribute('data-theme', val);
+        setCookie('theme', val, 365);
+      });
+    })();
+  </script>
 {% endblock %}
-
