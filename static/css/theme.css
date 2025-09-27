@@ -56,3 +56,21 @@ body[data-theme="light"] {
   border-radius: 12px;
   padding: 16px;
 }
+
+/* Common UI bits used across pages */
+.thumb {
+  height: 40px;
+  width: auto;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th, .table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.table th { text-align: left; color: var(--muted); }

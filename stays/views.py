@@ -152,7 +152,7 @@ def stay_detail(request, pk):
 
 def stay_add(request):
     if request.method == "POST":
-        form = StayForm(request.POST)
+        form = StayForm(request.POST, request.FILES)
         if form.is_valid():
             obj = form.save()
             return redirect("stays:detail", pk=obj.pk)
@@ -163,7 +163,7 @@ def stay_add(request):
 def stay_edit(request, pk):
     obj = get_object_or_404(Stay, pk=pk)
     if request.method == "POST":
-        form = StayForm(request.POST, instance=obj)
+        form = StayForm(request.POST, request.FILES, instance=obj)
         if form.is_valid():
             obj = form.save()
             return redirect("stays:detail", pk=obj.pk)
