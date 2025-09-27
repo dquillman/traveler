@@ -60,3 +60,37 @@ class ImportExportTests(TestCase):
         resp = self.client.post(url, {"file": upload, "delimiter": ",", "dry_run": "1"})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Stay.objects.count(), 0)
+
+
+class RoutesSmokeTests(TestCase):
+    def test_root_redirects_to_stays_list(self):
+        resp = self.client.get("/")
+        self.assertIn(resp.status_code, (301, 302))
+        target = reverse("stays:list")
+        self.assertTrue(
+            resp.headers.get("Location", "").endswith(target),
+            msg=f"Expected redirect to {target}, got {resp.headers.get('Location')}",
+        )
+
+    def test_stays_list_ok(self):
+        url = reverse("stays:list")
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        # Ensure no inline rating forms exist on the list page
+        self.assertNotIn("/rate/", resp.content.decode("utf-8", errors="ignore"))
+
+    def test_named_urls_resolve(self):
+        names = [
+            "stays:list",
+            "stays:add",
+            "stays:appearance",
+            "stays:map",
+            "stays:charts",
+            "stays:import_options",
+            "stays:export_options",
+            "stays:import_stays_csv",
+            "stays:export_stays_csv",
+        ]
+        for name in names:
+            with self.subTest(name=name):
+                reverse(name)

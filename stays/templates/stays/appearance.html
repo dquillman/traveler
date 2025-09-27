@@ -23,6 +23,16 @@
       <dt>Secondary Color</dt><dd>{{ site_appearance.secondary_color }}</dd>
     </dl>
   </div>
+  <div class="card" style="margin-top:12px;">
+    <h2 style="margin-top:0;">Data Utilities</h2>
+    <p class="muted">Bulk fill missing coordinates using city/state/address. Uses OpenStreetMap Nominatim; please be patient.</p>
+    <form method="post" action="{% url 'stays:appearance_geocode' %}" onsubmit="return confirm('Geocode missing coordinates now?');" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      {% csrf_token %}
+      <label>Limit: <input class="txt" type="number" name="limit" min="1" value="1000" style="width:120px"></label>
+      <button class="btn btn-outline" type="submit">Bulk Geocode Missing Coordinates</button>
+      <a class="btn" href="{% url 'stays:map' %}">View Map</a>
+    </form>
+  </div>
   <script>
     (function(){
       const current = (document.body.dataset.theme || '{{ site_appearance.theme|default:"dark" }}').toLowerCase();

@@ -1,17 +1,11 @@
-from django.db import migrations, models
+from django.db import migrations
+
+
 class Migration(migrations.Migration):
+    # Ensure this runs after the re-add in 0011 to avoid duplicate columns
     dependencies = [
-        ('stays', '0010_remove_stay_latitude_remove_stay_longitude'),
+        ('stays', '0011_force_add_lat_lng'),
     ]
-    operations = [
-        migrations.AddField(
-            model_name='stay',
-            name='latitude',
-            field=models.DecimalField(null=True, blank=True, max_digits=9, decimal_places=6),
-        ),
-        migrations.AddField(
-            model_name='stay',
-            name='longitude',
-            field=models.DecimalField(null=True, blank=True, max_digits=9, decimal_places=6),
-        ),
-    ]
+
+    # No-op: previous add/remove churn replaced by 0011 and merged in 0012
+    operations = []

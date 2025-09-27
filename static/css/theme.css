@@ -9,6 +9,8 @@
   --accent: #2563eb;
   --accent-contrast: #ffffff;
   --fg: var(--text);
+  --success: #16a34a; /* default green */
+  --danger: #dc2626;  /* default red */
 }
 
 body[data-theme="dark"] {
@@ -21,6 +23,8 @@ body[data-theme="dark"] {
   --accent: #2563eb;
   --accent-contrast: #ffffff;
   --fg: var(--text);
+  --success: #16a34a;
+  --danger: #dc2626;
 }
 
 body[data-theme="light"] {
@@ -33,6 +37,8 @@ body[data-theme="light"] {
   --accent: #0d6efd;
   --accent-contrast: #ffffff;
   --fg: var(--text);
+  --success: #16a34a;
+  --danger: #dc2626;
 }
 
 /* Utility classes (optional) */
@@ -50,6 +56,8 @@ body[data-theme="light"] {
   color: var(--text);
   border: 1px solid var(--text);
 }
+.btn-success { background: var(--success); border-color: var(--success); color: #ffffff; }
+.btn-danger  { background: var(--danger);  border-color: var(--danger);  color: #ffffff; }
 .card {
   background: var(--card);
   border: 1px solid var(--border);

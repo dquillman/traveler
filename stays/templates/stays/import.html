@@ -21,7 +21,13 @@
           <span>Simulate only (don’t save)</span>
         </label>
       </div>
-      <div class="actions" style="margin-top:8px"><button type="submit" class="btn">Upload & Import</button></div>
+      <div style="margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" name="autogeocode" value="1" checked />
+          <span>Auto geocode missing coordinates</span>
+        </label>
+        <div class="actions" style="margin-top:0"><button type="submit" class="btn">Upload & Import</button></div>
+      </div>
     </form>
     <p class="muted" style="margin-top:8px">Preferred headers: <code>Park, City, State, Check in, Leave, #Nts, Rate/nt, Total, Fees, Paid?, Site, Notes</code>. Legacy <code>City/St</code> still supported.</p>
   </div>
@@ -126,8 +132,10 @@
       // carry options from the form
       const delim = form.querySelector('select[name="delimiter"]').value || 'auto';
       const dry = form.querySelector('input[name="dry_run"]').checked;
+      const autoGeo = form.querySelector('input[name="autogeocode"]').checked;
       fd.append('delimiter', delim);
       if (dry) fd.append('dry_run', '1');
+      if (autoGeo) fd.append('autogeocode', '1');
 
       const resp = await fetch(form.action, {
         method: 'POST',

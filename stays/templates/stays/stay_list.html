@@ -19,6 +19,7 @@
           <th>Rate/nt</th>
           <th>Total</th>
           <th>Fees</th>
+          <th>Rating <span class="muted" style="font-weight:normal; font-size:0.85em; opacity:0.75;">(edit to change)</span></th>
           <th>Paid?</th>
           <th>Site</th>
           <th></th>
@@ -31,18 +32,25 @@
               {% if s.photo %}
                 <img class="thumb" src="{{ s.photo.url }}" alt="{{ s.park|default:'photo' }}"/>
               {% else %}
-                —
+                &mdash;
               {% endif %}
             </td>
-            <td><a href="{% url 'stays:detail' s.pk %}">{{ s.park|default:'—' }}</a></td>
-            <td>{{ s.city|default:'—' }}</td>
-            <td>{{ s.state|default:'—' }}</td>
-            <td>{{ s.check_in|date:"Y-m-d"|default:'—' }}</td>
-            <td>{{ s.leave_date|date:"Y-m-d"|default:'—' }}</td>
+            <td><a href="{% url 'stays:detail' s.pk %}">{{ s.park|default:'&mdash;' }}</a></td>
+            <td>{{ s.city|default:'&mdash;' }}</td>
+            <td>{{ s.state|default:'&mdash;' }}</td>
+            <td>{{ s.check_in|date:"Y-m-d"|default:'&mdash;' }}</td>
+            <td>{{ s.leave_date|date:"Y-m-d"|default:'&mdash;' }}</td>
             <td class="num">{{ s.nights|default:0 }}</td>
             <td class="num">{{ s.price_night|default:0|floatformat:2 }}</td>
             <td class="num">{{ s.total|default:0|floatformat:2 }}</td>
             <td class="num">{{ s.fees|default:0|floatformat:2 }}</td>
+            <td>
+              <div aria-label="Rating" title="Edit the stay to change rating">
+                {% for i in stars %}
+                  <span style="display:inline-block; padding:2px 4px; margin-right:2px; color:{% if s.rating and s.rating >= i %}var(--accent){% else %}#bbb{% endif %};">&#9733;</span>
+                {% endfor %}
+              </div>
+            </td>
             <td>{% if s.paid %}Yes{% else %}No{% endif %}</td>
             <td>{{ s.site|default:'' }}</td>
             <td><a class="btn btn-outline" href="{% url 'stays:edit' s.pk %}">Edit</a></td>

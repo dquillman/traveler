@@ -5,6 +5,11 @@ from .utils import build_query_from_stay, geocode_address
 
 @receiver(pre_save, sender=Stay)
 def stays_autogeocode(sender, instance: Stay, **kwargs):
+    # Normalize state to uppercase
+    st = getattr(instance, "state", None)
+    if isinstance(st, str):
+        instance.state = st.strip().upper()
+
     # Only fill if both coords are missing
     lat_missing = not getattr(instance, "latitude", None)
     lng_missing = not getattr(instance, "longitude", None)

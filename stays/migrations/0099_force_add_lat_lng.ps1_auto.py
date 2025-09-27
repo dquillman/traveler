@@ -1,17 +1,10 @@
-from django.db import migrations, models
+from django.db import migrations
+
+
 class Migration(migrations.Migration):
     dependencies = [
-        ('stays', '0011_force_add_lat_lng'),
+        ('stays', '0012_merge_0010_add_lat_lng_fix_0011_force_add_lat_lng'),
     ]
-    operations = [
-        migrations.AddField(
-            model_name='stay',
-            name='latitude',
-            field=models.DecimalField(null=True, blank=True, max_digits=9, decimal_places=6),
-        ),
-        migrations.AddField(
-            model_name='stay',
-            name='longitude',
-            field=models.DecimalField(null=True, blank=True, max_digits=9, decimal_places=6),
-        ),
-    ]
+
+    # No-op: superseded by 0011/0012
+    operations = []

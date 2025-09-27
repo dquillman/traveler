@@ -82,6 +82,7 @@ def stay_list(request):
         "selected_cities": selected_cities,
         "selected_ratings": selected_ratings,
         "map_query": map_query,
+        "stars": [1, 2, 3, 4, 5],
     })
 
 def stay_map(request):
@@ -122,6 +123,31 @@ def appearance_page(request):
         pass
     return render(request, "stays/appearance.html")
 
+def appearance_geocode(request):
+    """Bulk geocode from Appearance page; stays on the same page when done."""
+    if request.method != 'POST':
+        return HttpResponseBadRequest('POST required')
+    try:
+        limit_param = request.POST.get('limit') or request.GET.get('limit') or '1000'
+        limit = None if str(limit_param).lower() in {'all', 'unlimited', 'none'} else int(limit_param)
+    except Exception:
+        limit = 1000
+    from .utils import build_query_from_stay, geocode_address
+    qs = Stay.objects.filter(latitude__isnull=True) | Stay.objects.filter(longitude__isnull=True)
+    updated = 0
+    # Apply limit if provided
+    iterable = qs.iterator() if limit is None else qs[:limit]
+    for s in iterable:
+        q = build_query_from_stay(s)
+        if not q:
+            continue
+        coords = geocode_address(q)
+        if coords:
+            s.latitude, s.longitude = coords
+            s.save(update_fields=['latitude', 'longitude'])
+            updated += 1
+    messages.success(request, f"Geocoded {updated} stay(s).")
+    return redirect('stays:appearance')
 
 def geocode_missing(request):
     """Geocode stays missing coordinates. POST only. Optional ?limit=..."""
@@ -148,13 +174,28 @@ def geocode_missing(request):
 
 def stay_detail(request, pk):
     obj = get_object_or_404(Stay, pk=pk)
-    return render(request, "stays/stay_detail.html", {"stay": obj})
+    return render(request, "stays/stay_detail.html", {"stay": obj, "stars": [1, 2, 3, 4, 5]})
 
 def stay_add(request):
     if request.method == "POST":
         form = StayForm(request.POST, request.FILES)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            # Normalize state and auto-geocode if missing coords
+            st = getattr(obj, "state", None)
+            if isinstance(st, str):
+                obj.state = st.strip().upper()
+            if (getattr(obj, "latitude", None) is None) or (getattr(obj, "longitude", None) is None):
+                try:
+                    from .utils import build_query_from_stay, geocode_address
+                    q = build_query_from_stay(obj)
+                    if q:
+                        coords = geocode_address(q)
+                        if coords:
+                            obj.latitude, obj.longitude = coords
+                except Exception:
+                    pass
+            obj.save()
             return redirect("stays:detail", pk=obj.pk)
     else:
         form = StayForm()
@@ -165,11 +206,57 @@ def stay_edit(request, pk):
     if request.method == "POST":
         form = StayForm(request.POST, request.FILES, instance=obj)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            st = getattr(obj, "state", None)
+            if isinstance(st, str):
+                obj.state = st.strip().upper()
+            if (getattr(obj, "latitude", None) is None) or (getattr(obj, "longitude", None) is None):
+                try:
+                    from .utils import build_query_from_stay, geocode_address
+                    q = build_query_from_stay(obj)
+                    if q:
+                        coords = geocode_address(q)
+                        if coords:
+                            obj.latitude, obj.longitude = coords
+                except Exception:
+                    pass
+            obj.save()
             return redirect("stays:detail", pk=obj.pk)
     else:
         form = StayForm(instance=obj)
     return render(request, "stays/stay_form.html", {"form": form, "stay": obj})
+
+def stay_geocode(request, pk):
+    obj = get_object_or_404(Stay, pk=pk)
+    if request.method != 'POST':
+        return HttpResponseBadRequest('POST required')
+    try:
+        from .utils import build_query_from_stay, geocode_address
+        q = build_query_from_stay(obj)
+        if not q:
+            messages.error(request, "Not enough address info to geocode. Add city/state or address.")
+            return redirect('stays:edit', pk=obj.pk)
+        coords = geocode_address(q)
+        if coords:
+            obj.latitude, obj.longitude = coords
+            obj.save(update_fields=['latitude', 'longitude'])
+            messages.success(request, f"Geocoded to {coords[0]:.6f}, {coords[1]:.6f}.")
+        else:
+            messages.warning(request, "Could not geocode this stay.")
+    except Exception as e:
+        messages.error(request, f"Geocode error: {e}")
+    return redirect('stays:edit', pk=obj.pk)
+
+# Destructive: delete a Stay (POST only)
+def stay_delete(request, pk):
+    obj = get_object_or_404(Stay, pk=pk)
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+    obj.delete()
+    messages.success(request, "Stay deleted.")
+    return redirect("stays:list")
+
+# rating is edited only on add/edit forms; no list-page endpoint
 
 # --- Charts (basic, graceful if fields missing) ---
 def stay_charts(request):
@@ -205,17 +292,21 @@ def stay_charts(request):
             years_labels.append(str(y))
             years_series.append(ym[y])
 
-    # 3) Rating distribution
+    # 3) Rating distribution (fully guarded for missing column)
     rating_labels, rating_series = [], []
     if "rating" in field_names:
-        vals = Stay.objects.exclude(rating__isnull=True).values_list("rating", flat=True)
         rm = {}
-        for r in vals:
-            try:
-                r = int(r)
-                rm[r] = rm.get(r, 0) + 1
-            except Exception:
-                continue
+        try:
+            vals = list(Stay.objects.exclude(rating__isnull=True).values_list("rating", flat=True))
+            for v in vals:
+                try:
+                    iv = int(v)
+                except Exception:
+                    continue
+                if 1 <= iv <= 5:
+                    rm[iv] = rm.get(iv, 0) + 1
+        except Exception:
+            rm = {}
         for r in sorted(rm.keys()):
             rating_labels.append(str(r))
             rating_series.append(rm[r])
@@ -280,6 +371,7 @@ def import_stays_csv(request):
 
     reader = csv.DictReader(text.splitlines(), delimiter=delimiter)
     created = 0
+    auto_geocode = (request.POST.get("autogeocode") or request.GET.get("autogeocode")) in {"1", "true", "yes"}
     dry_run = (request.POST.get("dry_run") or request.GET.get("dry_run")) in {"1", "true", "yes"}
 
     def norm(h):
@@ -337,6 +429,15 @@ def import_stays_csv(request):
         s = (val or "").strip().lower()
         return s in {"y", "yes", "true", "1"}
 
+    def parse_int_1_5(val):
+        try:
+            i = int((val or "").strip())
+            if 1 <= i <= 5:
+                return i
+        except Exception:
+            pass
+        return None
+
     rows = list(reader)
     for row in rows:
         # Support combined City/St column like "Austin, TX"
@@ -361,6 +462,7 @@ def import_stays_csv(request):
             total=parse_money(get(row, "Total")),
             fees=parse_money(get(row, "Fees", "Taxes/fees")),
             paid=parse_bool(get(row, "Paid?", "Paid")),
+            rating=parse_int_1_5(get(row, "Rating")),
             site=get(row, "Site"),
             notes=get(row, "Notes"),
         )
@@ -372,6 +474,16 @@ def import_stays_csv(request):
         if lng is not None:
             obj.longitude = lng
         if not dry_run:
+            if auto_geocode and (obj.latitude is None or obj.longitude is None):
+                try:
+                    from .utils import build_query_from_stay, geocode_address
+                    q = build_query_from_stay(obj)
+                    if q:
+                        coords = geocode_address(q)
+                        if coords:
+                            obj.latitude, obj.longitude = coords
+                except Exception:
+                    pass
             obj.save()
         created += 1
 
@@ -391,7 +503,7 @@ def export_stays_csv(request):
     """
     headers = [
         "Park", "City", "State", "Check in", "Leave", "#Nts",
-        "Rate/nt", "Total", "Fees", "Paid?", "Site", "Notes",
+        "Rate/nt", "Total", "Fees", "Paid?", "Rating", "Site", "Notes",
     ]
 
     # Always prepare CSV in-memory first so we can both save and/or stream.
@@ -412,6 +524,7 @@ def export_stays_csv(request):
             f"{s.total:.2f}" if s.total is not None else "",
             f"{s.fees:.2f}" if s.fees is not None else "",
             "Yes" if s.paid else "No",
+            str(getattr(s, 'rating', '') or ""),
             smart_str(s.site or ""),
             smart_str(s.notes or ""),
         ])

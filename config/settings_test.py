@@ -1,10 +1,16 @@
-from .settings import *  # noqa
+from .settings import *  # noqa: F401,F403
 
-# Ensure test client host is allowed
-ALLOWED_HOSTS = list(ALLOWED_HOSTS) + ["testserver", "localhost"]
-
-# Disable migrations for the stays app to avoid legacy conflicts during tests
-MIGRATION_MODULES = dict(globals().get('MIGRATION_MODULES', {}) or {})
-MIGRATION_MODULES.update({
+# Disable stays app migrations during tests due to historical conflicts.
+MIGRATION_MODULES = {
+    **globals().get("MIGRATION_MODULES", {}),
     "stays": None,
-})
+}
+
+# Faster password hasher for tests
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.MD5PasswordHasher",
+]
+
+# Ensure emails don’t try to send
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+

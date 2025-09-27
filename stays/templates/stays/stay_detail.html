@@ -8,6 +8,19 @@
     <div><strong>Latitude:</strong> {{ stay.latitude }}</div>
     <div><strong>Longitude:</strong> {{ stay.longitude }}</div>
   </div>
+  <div class="mb-6" title="Edit to change rating">
+    <strong>Rating:</strong>
+    {% if stay.rating %}
+      <span class="inline-block align-middle" aria-label="Rating">
+        {% for i in stars %}
+          <span style="display:inline-block; padding:0 2px; color:{% if stay.rating and stay.rating >= i %}var(--accent){% else %}#bbb{% endif %};">&#9733;</span>
+        {% endfor %}
+      </span>
+      <span class="opacity-70">({{ stay.rating }}/5)</span>
+    {% else %}
+      <span class="opacity-70">—</span>
+    {% endif %}
+  </div>
   <div class="flex gap-4">
     <a class="btn btn-primary" href="{% url 'stays:edit' stay.pk %}">Edit</a>
     <a class="btn" href="{% url 'stays:list' %}">Back</a>

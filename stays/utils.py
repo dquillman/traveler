@@ -16,7 +16,10 @@ def build_query_from_stay(stay) -> Optional[str]:
                 parts.append(s)
     if not parts:
         return None
-    return ", ".join(parts)
+    q = ", ".join(parts)
+    if q and ("USA" not in q and "United States" not in q):
+        q = q + ", USA"
+    return q
 
 def geocode_address(query: str) -> Optional[Tuple[float, float]]:
     """Geocode via geopy Nominatim if available; fallback to direct HTTP using requests.

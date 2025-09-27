@@ -14,8 +14,26 @@
       </div>
     {% endfor %}
     <div class="flex gap-3">
-      <button type="submit" class="btn btn-primary">Save</button>
+      <button type="submit" class="btn btn-success">Save</button>
       <a href="{% url 'stays:list' %}" class="btn">Cancel</a>
+      {% if stay %}
+      <button type="submit"
+              formaction="{% url 'stays:geocode' stay.pk %}"
+              formmethod="post"
+              class="btn btn-outline"
+              title="Try to fill lat/lng from the address">
+        Geocode Now
+      </button>
+      {% endif %}
+      {% if stay %}
+      <button type="submit"
+              formaction="{% url 'stays:delete' stay.pk %}"
+              formmethod="post"
+              class="btn btn-danger"
+              onclick="return confirm('Are you sure you want to delete this stay?');">
+        Delete Stay
+      </button>
+      {% endif %}
     </div>
   </form>
 </div>
