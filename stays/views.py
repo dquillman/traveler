@@ -35,6 +35,7 @@ def _apply_stay_filters(qs, request):
     paid = (request.GET.get("paid") or "").strip()
     min_price = (request.GET.get("min_price") or "").strip()
     max_price = (request.GET.get("max_price") or "").strip()
+    missing_coords = (request.GET.get("missing_coords") or "").strip()
 
     states = [s for s in states if s]
     cities = [c for c in cities if c]
@@ -100,6 +101,10 @@ def _apply_stay_filters(qs, request):
     if dmax is not None:
         qs = qs.filter(price_night__isnull=False, price_night__lte=dmax)
 
+    # Missing coordinates
+    if missing_coords in {"1", "true", "yes"}:
+        qs = qs.filter(Q(latitude__isnull=True) | Q(longitude__isnull=True))
+
     return qs
 
 def stay_list(request):
@@ -115,6 +120,7 @@ def stay_list(request):
     selected_min_price = (request.GET.get("min_price") or "").strip()
     selected_max_price = (request.GET.get("max_price") or "").strip()
     selected_sort = (request.GET.get("sort") or "date_desc").strip()
+    selected_missing = (request.GET.get("missing_coords") or "").strip() in {"1","true","yes"}
     selected_ratings = [str(r) for r in selected_ratings]
 
     # Choices
@@ -170,6 +176,7 @@ def stay_list(request):
     if selected_min_price: qs_params.append(("min_price", selected_min_price))
     if selected_max_price: qs_params.append(("max_price", selected_max_price))
     if selected_sort: qs_params.append(("sort", selected_sort))
+    if selected_missing: qs_params.append(("missing_coords", "1"))
     map_query = urlencode(qs_params)
 
     return render(request, "stays/stay_list.html", {
@@ -188,6 +195,7 @@ def stay_list(request):
         "selected_min_price": selected_min_price,
         "selected_max_price": selected_max_price,
         "selected_sort": selected_sort,
+        "selected_missing": selected_missing,
         "map_query": map_query,
         "stars": [1, 2, 3, 4, 5],
     })

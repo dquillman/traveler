@@ -94,3 +94,56 @@ class RoutesSmokeTests(TestCase):
         for name in names:
             with self.subTest(name=name):
                 reverse(name)
+
+
+class FilteringTests(TestCase):
+    def setUp(self):
+        from stays.models import Stay
+        from datetime import date
+        Stay.objects.create(park="Blue Camp", city="Austin", state="TX", check_in=date(2024,3,10), leave_date=date(2024,3,12), price_night=50, paid=True, rating=5)
+        Stay.objects.create(park="Green Park", city="Boise", state="ID", check_in=date(2024,5,1), leave_date=date(2024,5,3), price_night=30, paid=False, rating=3)
+
+    def test_search_q(self):
+        url = reverse("stays:list") + "?q=Austin"
+        resp = self.client.get(url)
+        self.assertContains(resp, "Blue Camp")
+        self.assertNotContains(resp, "Green Park")
+
+    def test_filter_state(self):
+        url = reverse("stays:list") + "?state=TX"
+        resp = self.client.get(url)
+        self.assertContains(resp, "Blue Camp")
+        self.assertNotContains(resp, "Green Park")
+        # City choices should only include Austin when TX selected
+        html = resp.content.decode("utf-8", errors="ignore")
+        self.assertIn('option value="Austin"', html)
+        self.assertNotIn('option value="Boise"', html)
+
+    def test_filter_rating(self):
+        url = reverse("stays:list") + "?rating=5"
+        resp = self.client.get(url)
+        self.assertContains(resp, "Blue Camp")
+        self.assertNotContains(resp, "Green Park")
+
+    def test_filter_paid(self):
+        url = reverse("stays:list") + "?paid=0"
+        resp = self.client.get(url)
+        self.assertContains(resp, "Green Park")
+        self.assertNotContains(resp, "Blue Camp")
+
+    def test_filter_missing_coords(self):
+        from stays.models import Stay
+        # Create one with coords and one without
+        Stay.objects.create(park="No Coords", city="Elgin", state="IL", latitude=None, longitude=None)
+        Stay.objects.create(park="Has Coords", city="Elgin", state="IL", latitude=42.03, longitude=-88.28)
+        url = reverse("stays:list") + "?missing_coords=1"
+        resp = self.client.get(url)
+        self.assertContains(resp, "No Coords")
+        self.assertNotContains(resp, "Has Coords")
+
+    def test_filter_date_range(self):
+        # Only Boise stay falls within May window
+        url = reverse("stays:list") + "?start=2024-05-01&end=2024-05-31"
+        resp = self.client.get(url)
+        self.assertContains(resp, "Green Park")
+        self.assertNotContains(resp, "Blue Camp")

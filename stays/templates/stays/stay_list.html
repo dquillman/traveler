@@ -43,6 +43,10 @@
         <div class="muted">End</div>
         <input class="txt" type="date" name="end" value="{{ selected_end }}">
       </label>
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" name="missing_coords" value="1" {% if selected_missing %}checked{% endif %}>
+        <span class="muted">Missing coords</span>
+      </label>
       <label>
         <div class="muted">Sort</div>
         <select name="sort" class="txt">
