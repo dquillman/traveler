@@ -9,10 +9,8 @@
   </p>
 </div>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css" onerror="this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'"/>
+<script src="/static/vendor/leaflet/leaflet.js" onerror="this.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'"></script>
 
 <script type="application/json" id="stays-data">{{ stays_json|safe }}</script>
 

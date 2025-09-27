@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <title>Stays Map</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+  <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css" onerror="this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'">
   <style>#map{height: 80vh;}</style>
 </head>
 <body>
   <div id="map"></div>
   <script type="application/json" id="stays-data">{{ stays_json|safe }}</script>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="/static/vendor/leaflet/leaflet.js" onerror="this.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'"></script>
   <script>
     const map = L.map('map').setView([39.5, -98.35], 4);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -39,7 +39,7 @@
           ${pk ? `<div style=\"display:flex; gap:8px;\"><a class=\"btn btn-outline\" href=\"${viewUrl}\">View</a><a class=\"btn\" href=\"${editUrl}\">Edit</a></div>` : ''}
         </div>`;
 
-      const m = L.marker([lat, lng])
+      const m = L.circleMarker([lat, lng], { radius: 7, weight: 2, color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.9 })
         .addTo(map)
         .bindPopup(html);
       markers.push(m);
