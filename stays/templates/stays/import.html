@@ -16,9 +16,13 @@
             <option value="\t" {% if default_delimiter == '\t' or default_delimiter == 'tab' %}selected{% endif %}>Tab</option>
           </select>
         </label>
+        <label>
+          <div>Sheet (for .xlsx)</div>
+          <input class="txt" type="text" name="sheet" placeholder="e.g. Sheet1" />
+        </label>
         <label style="display:flex; align-items:center; gap:6px;">
           <input type="checkbox" name="dry_run" value="1" {% if default_dry %}checked{% endif %} />
-          <span>Simulate only (don’t save)</span>
+          <span>Simulate only (don't save)</span>
         </label>
       </div>
       <div style="margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -132,9 +136,11 @@
       // carry options from the form
       const delim = form.querySelector('select[name="delimiter"]').value || 'auto';
       const dry = form.querySelector('input[name="dry_run"]').checked;
+      const sheet = (form.querySelector('input[name="sheet"]').value || '').trim();
       const autoGeo = form.querySelector('input[name="autogeocode"]').checked;
       fd.append('delimiter', delim);
       if (dry) fd.append('dry_run', '1');
+      if (sheet) fd.append('sheet', sheet);
       if (autoGeo) fd.append('autogeocode', '1');
 
       const resp = await fetch(form.action, {

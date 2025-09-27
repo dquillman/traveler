@@ -467,43 +467,81 @@ def import_stays_csv(request):
     if not f:
         return render(request, "stays/import.html", {"error": "Please choose a CSV file."})
 
-    # Decode bytes safely; fall back to latin-1 if needed
-    raw = f.read()
-    try:
-        text = raw.decode("utf-8")
-    except Exception:
-        text = raw.decode("latin-1", errors="ignore")
-
-    # Determine delimiter
-    delim_choice = (request.POST.get("delimiter") or request.GET.get("delimiter") or "auto").lower()
-    delimiter = ","
-    if delim_choice in {"comma", ","}:
-        delimiter = ","
-    elif delim_choice in {"semicolon", ";"}:
-        delimiter = ";"
-    elif delim_choice in {"tab", "\t"}:
-        delimiter = "\t"
-    else:
-        # auto-sniff
-        try:
-            sniffer = csv.Sniffer()
-            sample = text[:2048]
-            dialect = sniffer.sniff(sample, delimiters=[",", ";", "\t"])
-            delimiter = dialect.delimiter
-        except Exception:
-            delimiter = ","
-
-    reader = csv.DictReader(text.splitlines(), delimiter=delimiter)
+    # Determine type and build rows list of dicts
     created = 0
     skipped = 0
     auto_geocode = (request.POST.get("autogeocode") or request.GET.get("autogeocode")) in {"1", "true", "yes"}
     dry_run = (request.POST.get("dry_run") or request.GET.get("dry_run")) in {"1", "true", "yes"}
 
+    filename = (getattr(f, "name", "") or "").lower()
+    sheet_name = (request.POST.get("sheet") or request.GET.get("sheet") or "").strip()
+    rows = []
+    header_keys = {}
+
+    if filename.endswith((".xlsx", ".xlsm", ".xltx", ".xltm")):
+        try:
+            import openpyxl  # type: ignore
+            from io import BytesIO
+            wb = openpyxl.load_workbook(BytesIO(f.read()), data_only=True, read_only=True)
+            ws = wb[sheet_name] if (sheet_name and sheet_name in wb.sheetnames) else wb.active
+            header = None
+            for r in ws.iter_rows(values_only=True):
+                if r and any(v is not None and str(v).strip() != '' for v in r):
+                    header = [str(v).strip() if v is not None else '' for v in r]
+                    break
+            if not header:
+                return render(request, "stays/import.html", {"error": "Could not find a header row in the selected sheet."})
+            # Build row dicts
+            start_row = 2
+            for r in ws.iter_rows(min_row=start_row, values_only=True):
+                if r is None:
+                    continue
+                row = {}
+                for i, key in enumerate(header):
+                    if not key:
+                        continue
+                    val = r[i] if i < len(r) else None
+                    row[key] = '' if val is None else str(val)
+                if any((str(v).strip() for v in row.values())):
+                    rows.append(row)
+            header_keys = { (h or '').strip().lower(): h for h in header }
+        except Exception as e:
+            return render(request, "stays/import.html", {"error": f"Failed to read Excel file: {e}"})
+    else:
+        # CSV path
+        raw = f.read()
+        try:
+            text = raw.decode("utf-8")
+        except Exception:
+            text = raw.decode("latin-1", errors="ignore")
+
+        # Determine delimiter
+        delim_choice = (request.POST.get("delimiter") or request.GET.get("delimiter") or "auto").lower()
+        delimiter = ","
+        if delim_choice in {"comma", ","}:
+            delimiter = ","
+        elif delim_choice in {"semicolon", ";"}:
+            delimiter = ";"
+        elif delim_choice in {"tab", "\t"}:
+            delimiter = "\t"
+        else:
+            # auto-sniff
+            try:
+                sniffer = csv.Sniffer()
+                sample = text[:2048]
+                dialect = sniffer.sniff(sample, delimiters=[",", ";", "\t"])
+                delimiter = dialect.delimiter
+            except Exception:
+                delimiter = ","
+
+        reader = csv.DictReader(text.splitlines(), delimiter=delimiter)
+        rows = list(reader)
+        def norm(h):
+            return (h or "").strip().lower()
+        header_keys = {norm(h): h for h in (reader.fieldnames or [])}
+
     def norm(h):
         return (h or "").strip().lower()
-
-    # Build header map for quick lookup
-    header_keys = {norm(h): h for h in (reader.fieldnames or [])}
 
     def get(row, *cands):
         for c in cands:
@@ -563,7 +601,6 @@ def import_stays_csv(request):
             pass
         return None
 
-    rows = list(reader)
     for row in rows:
         # Support combined City/St column like "Austin, TX" or "Austin/TX" or "Austin TX"
         city_st = get(row, "City/St", "City/State")
