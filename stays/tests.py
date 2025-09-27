@@ -61,6 +61,24 @@ class ImportExportTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Stay.objects.count(), 0)
 
+    def test_import_dedup_by_key(self):
+        from stays.models import Stay
+        csv_text = (
+            "Park,City,State,Check in,Leave\n"
+            "Blue Camp,Austin,TX,2024-03-10,2024-03-12\n"
+            "Green Park,Boise,ID,2024-05-01,2024-05-03\n"
+        )
+        upload = SimpleUploadedFile("stays.csv", csv_text.encode("utf-8"), content_type="text/csv")
+        url = reverse("stays:import_stays_csv")
+        resp1 = self.client.post(url, {"file": upload, "delimiter": ","})
+        self.assertEqual(resp1.status_code, 200)
+        self.assertEqual(Stay.objects.count(), 2)
+        # Import same again; count should remain 2
+        upload2 = SimpleUploadedFile("stays.csv", csv_text.encode("utf-8"), content_type="text/csv")
+        resp2 = self.client.post(url, {"file": upload2, "delimiter": ","})
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(Stay.objects.count(), 2)
+
 
 class RoutesSmokeTests(TestCase):
     def test_root_redirects_to_stays_list(self):

@@ -6,7 +6,7 @@
     {% if dry_run %}
       <p>Simulated creation of {{ created }} stay{{ created|pluralize }}. No changes were saved.</p>
     {% else %}
-      <p>Created {{ created }} stay{{ created|pluralize }}.</p>
+      <p>Created {{ created }} stay{{ created|pluralize }}{% if skipped %} &middot; Skipped {{ skipped }} duplicate{{ skipped|pluralize }}{% endif %}.</p>
     {% endif %}
     <div class="actions"><a class="btn btn-outline" href="{% url 'stays:list' %}">Back to list</a></div>
   </div>

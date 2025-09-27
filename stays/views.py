@@ -486,6 +486,7 @@ def import_stays_csv(request):
 
     reader = csv.DictReader(text.splitlines(), delimiter=delimiter)
     created = 0
+    skipped = 0
     auto_geocode = (request.POST.get("autogeocode") or request.GET.get("autogeocode")) in {"1", "true", "yes"}
     dry_run = (request.POST.get("dry_run") or request.GET.get("dry_run")) in {"1", "true", "yes"}
 
@@ -604,6 +605,26 @@ def import_stays_csv(request):
         if lng is not None:
             obj.longitude = lng
         if not dry_run:
+            # Skip if a duplicate exists (same park/city/state/check_in/leave_date)
+            try:
+                norm_park = (obj.park or "").strip()
+                norm_city = (obj.city or "").strip()
+                norm_state = (obj.state or "").strip().upper()[:2]
+                # Only dedupe when we have a strong key
+                strong_key = bool(norm_park and norm_city and norm_state and obj.check_in and obj.leave_date)
+                if strong_key:
+                    exists = Stay.objects.filter(
+                        park__iexact=norm_park,
+                        city__iexact=norm_city,
+                        state=norm_state,
+                        check_in=obj.check_in,
+                        leave_date=obj.leave_date,
+                    ).exists()
+                    if exists:
+                        skipped += 1
+                        continue
+            except Exception:
+                pass
             if auto_geocode and (obj.latitude is None or obj.longitude is None):
                 try:
                     from .utils import build_query_from_stay, geocode_address
@@ -617,7 +638,7 @@ def import_stays_csv(request):
             obj.save()
         created += 1
 
-    return render(request, "stays/import_result.html", {"created": created, "dry_run": dry_run})
+    return render(request, "stays/import_result.html", {"created": created, "skipped": skipped, "dry_run": dry_run})
 
 
 def export_stays_csv(request):
