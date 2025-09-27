@@ -1,6 +1,9 @@
-﻿<header class="site-header">
+<header class="site-header">
   <nav class="container">
-    <a class="brand" href="/">Traveler</a>
+    <div style="display:flex; align-items:center; gap:.5rem;">
+      <a class="brand" href="/">Traveler</a>
+      <span class="version-pill">{{ app_version }}</span>
+    </div>
     <ul class="menu">
       <li><a href="{% url 'stays:list' %}">Stays</a></li>
       <li><a href="{% url 'stays:add' %}">Add</a></li>
@@ -12,3 +15,4 @@
     </ul>
   </nav>
 </header>
+

@@ -18,7 +18,8 @@
     }
     .nav { display:flex; gap:16px; align-items:center; padding:12px 16px; background:#0f1621; border-bottom:1px solid #1f2630; }
     .nav a { color:var(--fg); text-decoration:none; opacity:.9 } .nav a:hover{opacity:1}
-    .brand { font-weight:700; color:var(--pri); margin-right:20px; }
+    .brand { font-weight:800; color:var(--pri); margin-right:10px; }
+    .version-pill { display:inline-block; padding:2px 6px; border-radius:8px; font-size:.8rem; background: rgba(255,255,255,.12); color: var(--muted); margin-right:10px; }
     .wrap { padding:20px; }
     .btn { display:inline-block; padding:8px 12px; background:var(--pri); color:white; border-radius:6px; text-decoration:none; }
     .btn-outline { border:1px solid var(--pri); color:var(--pri); background:transparent; border-radius:6px; padding:7px 11px; }
@@ -36,6 +37,7 @@
 <body data-theme="{{ site_appearance.theme|default:'dark' }}">
   <nav class="nav">
     <span class="brand">{{ site_appearance.site_name|default:"Traveler" }}</span>
+    <span class="version-pill">{{ app_version }}</span>
     <a href="{% url 'stays:list' %}">Home</a>
     <a href="{% url 'stays:map' %}">Map</a>
     <a href="{% url 'stays:charts' %}">Charts</a>

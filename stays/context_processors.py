@@ -28,5 +28,6 @@ def site_appearance(request):
             "secondary_color": sec,
             "background_url": bg,
             "theme": theme,
-        }
+        },
+        "app_version": getattr(settings, "APP_VERSION", "v0.1.0"),
     }
