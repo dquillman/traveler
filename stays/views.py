@@ -555,17 +555,32 @@ def import_stays_csv(request):
 
     rows = list(reader)
     for row in rows:
-        # Support combined City/St column like "Austin, TX"
+        # Support combined City/St column like "Austin, TX" or "Austin/TX" or "Austin TX"
         city_st = get(row, "City/St", "City/State")
         city = get(row, "City")
         state = get(row, "State")
         if (not city or not state) and city_st:
-            parts = [p.strip() for p in city_st.replace("/", ",").split(",")]
+            raw = city_st.strip()
+            # Normalize common separators to comma
+            for sep in ["/", "|", " - ", "-"]:
+                raw = raw.replace(sep, ",")
+            parts = [p.strip() for p in raw.split(",") if p.strip()]
             if len(parts) >= 2:
                 if not city:
                     city = parts[0]
                 if not state:
-                    state = parts[1][:2]
+                    token = parts[1]
+                    # If looks like full state name, take first 2 letters; otherwise trust token
+                    state = token[:2]
+            elif len(parts) == 1 and " " in parts[0]:
+                # Fall back: split on last space -> "CityName ST"
+                base = parts[0]
+                cparts = base.rsplit(" ", 1)
+                if len(cparts) == 2:
+                    if not city:
+                        city = cparts[0].strip()
+                    if not state:
+                        state = cparts[1].strip()[:2]
 
         obj = Stay(
             park=get(row, "Park", "Campground", "Name"),
