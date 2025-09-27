@@ -180,9 +180,12 @@
       }
       const actionsBar = form.querySelector('div[style*="display:flex"][style*="align-items:center"]');
       if (actionsBar){
-        const b1=document.createElement('button'); b1.type='button'; b1.className='btn btn-outline'; b1.textContent='Last 90 days'; b1.onclick=()=>setPresetRange(90);
-        const b2=document.createElement('button'); b2.type='button'; b2.className='btn btn-outline'; b2.textContent='This Year'; b2.onclick=setThisYear;
-        actionsBar.appendChild(b1); actionsBar.appendChild(b2);
+        const mk = (label, handler)=>{ const b=document.createElement('button'); b.type='button'; b.className='btn btn-outline'; b.textContent=label; b.onclick=handler; return b; };
+        const b0 = mk('Last 30 days', ()=>setPresetRange(30));
+        const b1 = mk('Last 90 days', ()=>setPresetRange(90));
+        const b2 = mk('This Year', setThisYear);
+        const b3 = mk('No coords', ()=>{ const cb=form.querySelector('input[name="missing_coords"]'); if (cb) { cb.checked=true; } form.submit(); });
+        actionsBar.appendChild(b0); actionsBar.appendChild(b1); actionsBar.appendChild(b2); actionsBar.appendChild(b3);
       }
     })();
   </script>
