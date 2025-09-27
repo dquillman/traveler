@@ -3,7 +3,7 @@
 {% block content %}
   <div class="card">
     <h1>Import Stays</h1>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" action="{% url 'stays:import_stays_csv' %}">
       {% csrf_token %}
       <p><input type="file" name="file" accept=".csv" required></p>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
