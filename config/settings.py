@@ -76,4 +76,4 @@ GEOCODER_USER_AGENT = "traveler-app"
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # App version (surface in navbar). Update on releases.
-APP_VERSION = "v0.1.10"
+APP_VERSION = "v0.1.11"
