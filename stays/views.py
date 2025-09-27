@@ -114,6 +114,7 @@ def stay_list(request):
     selected_paid = (request.GET.get("paid") or "").strip()
     selected_min_price = (request.GET.get("min_price") or "").strip()
     selected_max_price = (request.GET.get("max_price") or "").strip()
+    selected_sort = (request.GET.get("sort") or "date_desc").strip()
     selected_ratings = [str(r) for r in selected_ratings]
 
     # Choices
@@ -132,6 +133,19 @@ def stay_list(request):
 
     # Apply filters to listing queryset
     qs = _apply_stay_filters(qs, request)
+
+    # Sorting
+    sort_map = {
+        "date_desc": ("-check_in", "-id"),
+        "date_asc": ("check_in", "id"),
+        "price_desc": ("-price_night", "-id"),
+        "price_asc": ("price_night", "id"),
+        "rating_desc": ("-rating", "-id"),
+        "rating_asc": ("rating", "id"),
+        "park_asc": ("park", "id"),
+    }
+    order = sort_map.get(selected_sort) or sort_map["date_desc"]
+    qs = qs.order_by(*order)
 
     # Build mapping of state -> cities for client-side dynamic filtering
     pairs = (Stay.objects
@@ -155,6 +169,7 @@ def stay_list(request):
     if selected_paid in {"0","1"}: qs_params.append(("paid", selected_paid))
     if selected_min_price: qs_params.append(("min_price", selected_min_price))
     if selected_max_price: qs_params.append(("max_price", selected_max_price))
+    if selected_sort: qs_params.append(("sort", selected_sort))
     map_query = urlencode(qs_params)
 
     return render(request, "stays/stay_list.html", {
@@ -172,6 +187,7 @@ def stay_list(request):
         "selected_paid": selected_paid,
         "selected_min_price": selected_min_price,
         "selected_max_price": selected_max_price,
+        "selected_sort": selected_sort,
         "map_query": map_query,
         "stars": [1, 2, 3, 4, 5],
     })

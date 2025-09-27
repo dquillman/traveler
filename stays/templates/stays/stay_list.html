@@ -44,20 +44,16 @@
         <input class="txt" type="date" name="end" value="{{ selected_end }}">
       </label>
       <label>
-        <div class="muted">Paid</div>
-        <select name="paid" class="txt">
-          <option value="">All</option>
-          <option value="1" {% if selected_paid == '1' %}selected{% endif %}>Yes</option>
-          <option value="0" {% if selected_paid == '0' %}selected{% endif %}>No</option>
+        <div class="muted">Sort</div>
+        <select name="sort" class="txt">
+          <option value="date_desc" {% if selected_sort == 'date_desc' %}selected{% endif %}>Newest First</option>
+          <option value="date_asc" {% if selected_sort == 'date_asc' %}selected{% endif %}>Oldest First</option>
+          <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>Price High → Low</option>
+          <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>Price Low → High</option>
+          <option value="rating_desc" {% if selected_sort == 'rating_desc' %}selected{% endif %}>Rating High → Low</option>
+          <option value="rating_asc" {% if selected_sort == 'rating_asc' %}selected{% endif %}>Rating Low → High</option>
+          <option value="park_asc" {% if selected_sort == 'park_asc' %}selected{% endif %}>Park A → Z</option>
         </select>
-      </label>
-      <label>
-        <div class="muted">Min $/nt</div>
-        <input class="txt" type="number" step="0.01" name="min_price" value="{{ selected_min_price }}" style="width:120px;">
-      </label>
-      <label>
-        <div class="muted">Max $/nt</div>
-        <input class="txt" type="number" step="0.01" name="max_price" value="{{ selected_max_price }}" style="width:120px;">
       </label>
       <div style="display:flex; gap:8px; align-items:center;">
         <button class="btn" type="submit">Apply</button>
@@ -157,6 +153,33 @@
       stateSel.addEventListener('change', rebuildCityOptions);
       // In case initial HTML not aligned to mapping, sync once on load
       rebuildCityOptions();
+
+      // Quick date presets
+      const form = stateSel.closest('form');
+      function fmt(d){
+        const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const x=String(d.getDate()).padStart(2,'0');
+        return `${y}-${m}-${x}`;
+      }
+      function setPresetRange(days){
+        const now=new Date();
+        const start=new Date(now.getTime()-days*24*3600*1000);
+        form.querySelector('input[name="start"]').value = fmt(start);
+        form.querySelector('input[name="end"]').value = fmt(now);
+        form.submit();
+      }
+      function setThisYear(){
+        const now=new Date();
+        const start=new Date(now.getFullYear(),0,1);
+        form.querySelector('input[name="start"]').value = fmt(start);
+        form.querySelector('input[name="end"]').value = fmt(new Date());
+        form.submit();
+      }
+      const actionsBar = form.querySelector('div[style*="display:flex"][style*="align-items:center"]');
+      if (actionsBar){
+        const b1=document.createElement('button'); b1.type='button'; b1.className='btn btn-outline'; b1.textContent='Last 90 days'; b1.onclick=()=>setPresetRange(90);
+        const b2=document.createElement('button'); b2.type='button'; b2.className='btn btn-outline'; b2.textContent='This Year'; b2.onclick=setThisYear;
+        actionsBar.appendChild(b1); actionsBar.appendChild(b2);
+      }
     })();
   </script>
 {% endblock %}
