@@ -11,6 +11,11 @@
         {{ field.label_tag }} {{ field }}
         {% if field.help_text %}<small class="opacity-70">{{ field.help_text }}</small>{% endif %}
         {{ field.errors }}
+        {% if field.name == 'photo' and stay and stay.photo %}
+          <div class="mt-2">
+            <img src="{{ stay.photo.url }}" alt="{{ stay.park|default:'photo' }}" style="max-width:240px; height:auto; border-radius:8px; border:1px solid var(--border);" />
+          </div>
+        {% endif %}
       </div>
     {% endfor %}
     <div class="flex gap-3">

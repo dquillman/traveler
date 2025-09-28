@@ -4,6 +4,11 @@
 <div class="container mx-auto px-4 py-6 max-w-3xl">
   <h1 class="text-2xl font-semibold mb-2">{{ stay.park }} {{ stay.site }}</h1>
   <p class="opacity-80 mb-4">{{ stay.city }}, {{ stay.state }}</p>
+  {% if stay.photo %}
+  <div class="mb-6">
+    <img src="{{ stay.photo.url }}" alt="{{ stay.park|default:'photo' }}" style="max-width:100%; height:auto; border-radius:10px; border:1px solid var(--border);" />
+  </div>
+  {% endif %}
   <div class="grid grid-cols-2 gap-4 mb-6">
     <div><strong>Latitude:</strong> {{ stay.latitude }}</div>
     <div><strong>Longitude:</strong> {{ stay.longitude }}</div>
