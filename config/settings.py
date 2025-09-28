@@ -88,7 +88,7 @@ GEOCODER_USER_AGENT = "traveler-app"
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # App version (surface in navbar). Update on releases.
-APP_VERSION = "v0.1.23"
+APP_VERSION = "v0.1.24"
 
 # --- Production security (effective when DEBUG is False) ---
 # Trust proxy headers for HTTPS (Render/most PaaS set X-Forwarded-Proto)
