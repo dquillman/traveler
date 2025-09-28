@@ -4,8 +4,9 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'dev-not-for-prod'
-DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
+# Allow DEBUG/ALLOWED_HOSTS to be configured via environment for deployments
+DEBUG = os.getenv('DEBUG', 'True').lower() in {'1', 'true', 'yes', 'on'}
+ALLOWED_HOSTS = [h for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,[::1],.onrender.com').split(',') if h]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
