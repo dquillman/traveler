@@ -20,6 +20,12 @@ __pycache__/
 *.tmp
 *.swp
 *.ps1_auto.py
+# archives and bundles
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tgz
 db.sqlite3
 db.sqlite3.*
 media/
