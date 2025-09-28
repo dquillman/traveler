@@ -36,6 +36,7 @@ def _apply_stay_filters(qs, request):
     min_price = (request.GET.get("min_price") or "").strip()
     max_price = (request.GET.get("max_price") or "").strip()
     missing_coords = (request.GET.get("missing_coords") or "").strip()
+    years = request.GET.getlist("year") or ([request.GET.get("year")] if request.GET.get("year") else [])
 
     states = [s for s in states if s]
     cities = [c for c in cities if c]
@@ -85,6 +86,18 @@ def _apply_stay_filters(qs, request):
 
     if paid in {"0", "1"}:
         qs = qs.filter(paid=(paid == "1"))
+    # Filter by year(s) across check_in or leave_date
+    years_int = []
+    for y in years:
+        try:
+            years_int.append(int(str(y).strip()))
+        except Exception:
+            pass
+    if years_int:
+        qy = Q()
+        qy |= Q(check_in__year__in=years_int)
+        qy |= Q(leave_date__year__in=years_int)
+        qs = qs.filter(qy)
 
     from decimal import Decimal, InvalidOperation
     def _dec(s):
@@ -121,6 +134,7 @@ def stay_list(request):
     selected_max_price = (request.GET.get("max_price") or "").strip()
     selected_sort = (request.GET.get("sort") or "date_desc").strip()
     selected_missing = (request.GET.get("missing_coords") or "").strip() in {"1","true","yes"}
+    selected_years = request.GET.getlist("year") or ([request.GET.get("year")] if request.GET.get("year") else [])
     selected_ratings = [str(r) for r in selected_ratings]
 
     # Choices
@@ -136,6 +150,19 @@ def stay_list(request):
                          .exclude(city__isnull=True).exclude(city__exact="")
                          .distinct().order_by("city"))
     rating_choices = [1, 2, 3, 4, 5]
+    # Year choices
+    year_set = set()
+    try:
+        for d in Stay.objects.exclude(check_in__isnull=True).dates("check_in", "year"):
+            year_set.add(d.year)
+    except Exception:
+        pass
+    try:
+        for d in Stay.objects.exclude(leave_date__isnull=True).dates("leave_date", "year"):
+            year_set.add(d.year)
+    except Exception:
+        pass
+    year_choices = sorted(year_set, reverse=True)
 
     # Apply filters to listing queryset
     qs = _apply_stay_filters(qs, request)
@@ -169,6 +196,7 @@ def stay_list(request):
     for s in selected_states:  qs_params.append(("state", s))
     for c in selected_cities:  qs_params.append(("city", c))
     for r in selected_ratings: qs_params.append(("rating", r))
+    for y in selected_years: qs_params.append(("year", y))
     if selected_q: qs_params.append(("q", selected_q))
     if selected_start: qs_params.append(("start", selected_start))
     if selected_end: qs_params.append(("end", selected_end))
@@ -188,6 +216,7 @@ def stay_list(request):
         "selected_states": selected_states,
         "selected_cities": selected_cities,
         "selected_ratings": selected_ratings,
+        "selected_years": [str(y) for y in selected_years],
         "selected_q": selected_q,
         "selected_start": selected_start,
         "selected_end": selected_end,
@@ -196,6 +225,7 @@ def stay_list(request):
         "selected_max_price": selected_max_price,
         "selected_sort": selected_sort,
         "selected_missing": selected_missing,
+        "year_choices": year_choices,
         "map_query": map_query,
         "stars": [1, 2, 3, 4, 5],
     })
@@ -247,16 +277,13 @@ def appearance_geocode(request):
         limit = None if str(limit_param).lower() in {'all', 'unlimited', 'none'} else int(limit_param)
     except Exception:
         limit = 1000
-    from .utils import build_query_from_stay, geocode_address
+    from .utils import geocode_from_stay
     qs = Stay.objects.filter(latitude__isnull=True) | Stay.objects.filter(longitude__isnull=True)
     updated = 0
     # Apply limit if provided
     iterable = qs.iterator() if limit is None else qs[:limit]
     for s in iterable:
-        q = build_query_from_stay(s)
-        if not q:
-            continue
-        coords = geocode_address(q)
+        coords = geocode_from_stay(s)
         if coords:
             s.latitude, s.longitude = coords
             s.save(update_fields=['latitude', 'longitude'])
@@ -271,6 +298,51 @@ def appearance_purge(request):
     total = Stay.objects.count()
     Stay.objects.all().delete()
     messages.success(request, f"Purged {total} stay(s).")
+    return redirect('stays:appearance')
+
+def appearance_normalize_cities(request):
+    """Normalize city values by removing trailing ", ST" and filling state if missing."""
+    if request.method != 'POST':
+        return HttpResponseBadRequest('POST required')
+    import re
+    fixed = 0
+    filled_state = 0
+    for s in Stay.objects.all():
+        city = (s.city or '').strip()
+        if not city:
+            continue
+        m = re.search(r"^(.*?),(?:\s*)([A-Za-z]{2})$", city)
+        changed = False
+        if m:
+            base, suff = m.group(1).strip(), m.group(2).upper()
+            if not (s.state or '').strip():
+                s.state = suff
+                filled_state += 1
+                changed = True
+            if base != s.city:
+                s.city = base
+                changed = True
+        elif "," in city:
+            base = city.split(",", 1)[0].strip()
+            if base != s.city:
+                s.city = base
+                changed = True
+        else:
+            # Case: "City ST" without comma
+            parts = city.split()
+            if len(parts) >= 2 and len(parts[-1]) == 2:
+                base = " ".join(parts[:-1]).strip()
+                if not (s.state or '').strip():
+                    s.state = parts[-1].upper()
+                    filled_state += 1
+                    changed = True
+                if base != s.city:
+                    s.city = base
+                    changed = True
+        if changed:
+            s.save(update_fields=['city', 'state'])
+            fixed += 1
+    messages.success(request, f"Normalized {fixed} stay(s); filled state for {filled_state}.")
     return redirect('stays:appearance')
 
 def geocode_missing(request):
@@ -355,12 +427,8 @@ def stay_geocode(request, pk):
     if request.method != 'POST':
         return HttpResponseBadRequest('POST required')
     try:
-        from .utils import build_query_from_stay, geocode_address
-        q = build_query_from_stay(obj)
-        if not q:
-            messages.error(request, "Not enough address info to geocode. Add city/state or address.")
-            return redirect('stays:edit', pk=obj.pk)
-        coords = geocode_address(q)
+        from .utils import geocode_from_stay
+        coords = geocode_from_stay(obj)
         if coords:
             obj.latitude, obj.longitude = coords
             obj.save(update_fields=['latitude', 'longitude'])
@@ -469,6 +537,7 @@ def import_stays_csv(request):
 
     # Determine type and build rows list of dicts
     created = 0
+    updated_count = 0
     skipped = 0
     auto_geocode = (request.POST.get("autogeocode") or request.GET.get("autogeocode")) in {"1", "true", "yes"}
     dry_run = (request.POST.get("dry_run") or request.GET.get("dry_run")) in {"1", "true", "yes"}
@@ -628,6 +697,16 @@ def import_stays_csv(request):
             pass
         return None
 
+    # Prepare skipped report writer
+    skipped_rows = []
+    def record_skip(reason: str, raw_row: dict):
+        nonlocal skipped_rows
+        row_copy = dict(raw_row)
+        row_copy["__reason__"] = reason
+        skipped_rows.append(row_copy)
+
+    dedupe_mode = (request.POST.get("dedupe") or request.GET.get("dedupe") or "skip").lower()
+
     for row in rows:
         # Support combined City/St column like "Austin, TX" or "Austin/TX" or "Austin TX"
         city_st = get(row, "City/St", "City/State")
@@ -656,6 +735,24 @@ def import_stays_csv(request):
                     if not state:
                         state = cparts[1].strip()[:2]
 
+        # If city field itself has trailing ", ST", split and adopt state if missing
+        if city:
+            if "," in city:
+                parts_city = [p.strip() for p in city.split(",")]
+                if len(parts_city) >= 2:
+                    # If trailing token is 2-letter, adopt as state when missing
+                    if len(parts_city[-1]) == 2 and not state:
+                        state = parts_city[-1]
+                    # Always reduce city to the portion before the first comma
+                    city = parts_city[0]
+            else:
+                # Handle "City ST" without comma
+                tokens = city.strip().split()
+                if len(tokens) >= 2 and len(tokens[-1]) == 2:
+                    if not state:
+                        state = tokens[-1]
+                    city = " ".join(tokens[:-1]).strip()
+
         obj = Stay(
             park=get(row, "Park", "Campground", "Name", "Park Name", "Camp Name", "Campground Name", "Location", "Place"),
             city=city,
@@ -676,6 +773,7 @@ def import_stays_csv(request):
                           and (obj.check_in is None) and (obj.leave_date is None)
         if empty_loc_dates:
             skipped += 1
+            record_skip("empty city/state/dates", row)
             continue
         # Optional latitude/longitude columns
         lat = parse_coord(get(row, "Latitude", "Lat"))
@@ -690,35 +788,86 @@ def import_stays_csv(request):
                 norm_park = (obj.park or "").strip()
                 norm_city = (obj.city or "").strip()
                 norm_state = (obj.state or "").strip().upper()[:2]
-                # Only dedupe when we have a strong key
                 strong_key = bool(norm_park and norm_city and norm_state and obj.check_in and obj.leave_date)
                 if strong_key:
-                    exists = Stay.objects.filter(
+                    existing_qs = Stay.objects.filter(
                         park__iexact=norm_park,
                         city__iexact=norm_city,
                         state=norm_state,
                         check_in=obj.check_in,
                         leave_date=obj.leave_date,
-                    ).exists()
-                    if exists:
-                        skipped += 1
-                        continue
+                    )
+                    if existing_qs.exists():
+                        if dedupe_mode == "skip":
+                            skipped += 1
+                            record_skip("duplicate", row)
+                            continue
+                        elif dedupe_mode == "update":
+                            # Update first matching row
+                            target = existing_qs.first()
+                            fields = [
+                                "price_night","total","fees","paid","rating","site","notes",
+                                "latitude","longitude","park","city","state"
+                            ]
+                            for f in fields:
+                                setattr(target, f, getattr(obj, f))
+                            target.save()
+                            updated_count += 1
+                            continue
+                        # else: 'none' falls through to create a new row
             except Exception:
                 pass
             if auto_geocode and (obj.latitude is None or obj.longitude is None):
                 try:
-                    from .utils import build_query_from_stay, geocode_address
-                    q = build_query_from_stay(obj)
-                    if q:
-                        coords = geocode_address(q)
-                        if coords:
-                            obj.latitude, obj.longitude = coords
+                    from .utils import geocode_from_stay
+                    coords = geocode_from_stay(obj)
+                    if coords:
+                        obj.latitude, obj.longitude = coords
                 except Exception:
                     pass
             obj.save()
         created += 1
 
-    return render(request, "stays/import_result.html", {"created": created, "skipped": skipped, "dry_run": dry_run})
+    # If we have skipped rows, write a CSV into MEDIA_ROOT/exports and expose URL
+    skipped_url = None
+    if skipped_rows and not dry_run:
+        try:
+            base = getattr(settings, "EXPORTS_DIR", None)
+            if not base:
+                media = getattr(settings, "MEDIA_ROOT", None)
+                base = Path(media) / "exports" if media else Path(settings.BASE_DIR) / "exports"
+            base = Path(base)
+            base.mkdir(parents=True, exist_ok=True)
+            from io import StringIO
+            import csv as _csv
+            buf = StringIO()
+            # Determine headers from first row
+            keys = list(skipped_rows[0].keys())
+            writer = _csv.DictWriter(buf, fieldnames=keys)
+            writer.writeheader()
+            for r in skipped_rows:
+                writer.writerow(r)
+            fname = f"skipped_import_{datetime.now().strftime('%Y%m%d-%H%M%S')}.csv"
+            target = base / fname
+            target.write_text(buf.getvalue(), encoding="utf-8")
+            # Build URL under MEDIA_URL if inside MEDIA_ROOT, else show absolute path
+            media = getattr(settings, "MEDIA_ROOT", None)
+            media_url = getattr(settings, "MEDIA_URL", "/media/")
+            if media and str(target).startswith(str(Path(media))):
+                rel = str(Path(target).relative_to(Path(media)))
+                skipped_url = str(Path(media_url) / Path(rel))
+            else:
+                skipped_url = None
+        except Exception:
+            skipped_url = None
+
+    return render(request, "stays/import_result.html", {
+        "created": created,
+        "updated": updated_count,
+        "skipped": skipped,
+        "skipped_url": skipped_url,
+        "dry_run": dry_run,
+    })
 
 
 def export_stays_csv(request):

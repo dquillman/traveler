@@ -13,10 +13,12 @@ urlpatterns = [
     path('appearance/', views.appearance_page, name='appearance'),
     path('appearance/geocode/', views.appearance_geocode, name='appearance_geocode'),
     path('appearance/purge/', views.appearance_purge, name='appearance_purge'),
+    path('appearance/normalize-cities/', views.appearance_normalize_cities, name='appearance_normalize_cities'),
     path('map/', views.stay_map, name='map'),
     path('map/geocode/', views.geocode_missing, name='map_geocode'),
     path('charts/', views.stay_charts, name='charts'),
     path('import/options/', views.import_stays_options, name='import_options'),
+    path('import/probe-sheets/', views.import_probe_sheets, name='import_probe_sheets'),
     path('export/options/', views.export_stays_options, name='export_options'),
     # CSV import/export
     path('import/', views.import_stays_csv, name='import_stays_csv'),

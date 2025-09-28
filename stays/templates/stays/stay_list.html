@@ -44,6 +44,14 @@
         <input class="txt" type="date" name="end" value="{{ selected_end }}">
       </label>
       <label>
+        <div class="muted">Year</div>
+        <select name="year" multiple size="4" class="txt" style="min-width:100px;">
+          {% for y in year_choices %}
+            <option value="{{ y }}" {% if y|stringformat:'s' in selected_years %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
         <div class="muted">Sort</div>
         <select name="sort" class="txt">
           <option value="date_desc" {% if selected_sort == 'date_desc' %}selected{% endif %}>Newest First</option>

@@ -6,7 +6,14 @@
     {% if dry_run %}
       <p>Simulated creation of {{ created }} stay{{ created|pluralize }}. No changes were saved.</p>
     {% else %}
-      <p>Created {{ created }} stay{{ created|pluralize }}{% if skipped %} &middot; Skipped {{ skipped }} duplicate{{ skipped|pluralize }}{% endif %}.</p>
+      <p>
+        Created {{ created }} stay{{ created|pluralize }}
+        {% if updated %}&middot; Updated {{ updated }}{% endif %}
+        {% if skipped %}&middot; Skipped {{ skipped }} row{{ skipped|pluralize }}{% endif %}
+      </p>
+      {% if skipped_url %}
+        <p class="muted">Download skipped rows report: <a class="btn btn-outline" href="{{ skipped_url }}">skipped_import.csv</a></p>
+      {% endif %}
     {% endif %}
     <div class="actions"><a class="btn btn-outline" href="{% url 'stays:list' %}">Back to list</a></div>
   </div>

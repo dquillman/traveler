@@ -114,6 +114,10 @@ class RoutesSmokeTests(TestCase):
                 reverse(name)
 
 
+from django.test import override_settings
+
+
+@override_settings(DISABLE_AUTO_GEOCODE=True)
 class FilteringTests(TestCase):
     def setUp(self):
         from stays.models import Stay
@@ -165,3 +169,14 @@ class FilteringTests(TestCase):
         resp = self.client.get(url)
         self.assertContains(resp, "Green Park")
         self.assertNotContains(resp, "Blue Camp")
+
+    def test_filter_year(self):
+        # Year filter should include either check_in or leave_date years
+        url = reverse("stays:list") + "?year=2024"
+        resp = self.client.get(url)
+        self.assertContains(resp, "Blue Camp")
+        self.assertContains(resp, "Green Park")
+        # A non-existing year should show none
+        resp2 = self.client.get(reverse("stays:list") + "?year=1999")
+        self.assertNotContains(resp2, "Blue Camp")
+        self.assertNotContains(resp2, "Green Park")

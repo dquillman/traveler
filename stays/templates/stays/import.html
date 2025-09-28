@@ -5,7 +5,7 @@
     <h1>Import Stays</h1>
     <form method="post" enctype="multipart/form-data" action="{% url 'stays:import_stays_csv' %}">
       {% csrf_token %}
-      <p><input type="file" name="file" accept=".csv" required></p>
+      <p><input id="csv-file" type="file" name="file" accept=".csv,.xlsx,.xlsm,.xltx,.xltm" required></p>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
         <label>
           <div>Delimiter</div>
@@ -16,9 +16,10 @@
             <option value="\t" {% if default_delimiter == '\t' or default_delimiter == 'tab' %}selected{% endif %}>Tab</option>
           </select>
         </label>
-        <label>
+        <label id="sheet-label" style="display:none;">
           <div>Sheet (for .xlsx)</div>
-          <input class="txt" type="text" name="sheet" placeholder="e.g. Sheet1" />
+          <select class="txt" name="sheet" id="sheet-select" style="display:none;"></select>
+          <input class="txt" type="text" name="sheet" id="sheet-input" placeholder="e.g. Sheet1" style="display:none;" />
         </label>
         <label style="display:flex; align-items:center; gap:6px;">
           <input type="checkbox" name="dry_run" value="1" {% if default_dry %}checked{% endif %} />
@@ -29,6 +30,14 @@
         <label style="display:flex; align-items:center; gap:6px;">
           <input type="checkbox" name="autogeocode" value="1" checked />
           <span>Auto geocode missing coordinates</span>
+        </label>
+        <label>
+          <div>Import mode</div>
+          <select class="txt" name="dedupe">
+            <option value="skip" selected>Skip duplicates</option>
+            <option value="update">Update existing (same Park/City/State/Dates)</option>
+            <option value="none">Do not dedupe (import all)</option>
+          </select>
         </label>
         <div class="actions" style="margin-top:0"><button type="submit" class="btn">Upload & Import</button></div>
       </div>
@@ -51,9 +60,13 @@
   </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
 (function(){
+  function getCsrf(){
+    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return el ? el.value : '';
+  }
   const supportsFS = 'showOpenFilePicker' in window;
   const pickBtn = document.getElementById('pick-file');
   const importBtn = document.getElementById('import-picked');
@@ -61,11 +74,65 @@
   const statusEl = document.getElementById('import-status');
   const dropZone = document.getElementById('drop-zone');
   const form = document.querySelector('form[enctype="multipart/form-data"]');
+  const fileInput = document.getElementById('csv-file');
+  const sheetLabel = document.getElementById('sheet-label');
+  const sheetSelect = document.getElementById('sheet-select');
+  const sheetInput = document.getElementById('sheet-input');
   let pickedFile = null;
 
   function setStatus(msg, ok){
     statusEl.textContent = msg || '';
     statusEl.style.color = ok === false ? 'var(--muted, #666)' : '';
+  }
+
+  // Probe Excel sheets when a local file is chosen via input
+  if (fileInput) {
+    fileInput.addEventListener('change', async () => {
+      sheetLabel.style.display = 'none';
+      sheetSelect.innerHTML = '';
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      const name = (f.name || '').toLowerCase();
+      if (name.match(/\.(xlsx|xlsm|xltx|xltm)$/)) {
+        sheetLabel.style.display = '';
+        sheetSelect.style.display = 'none';
+        sheetInput.style.display = 'none';
+        await probeSheets(f);
+      }
+    });
+  }
+
+  async function probeSheets(file){
+    try {
+      const fd = new FormData();
+      fd.append('csrfmiddlewaretoken', getCsrf());
+      fd.append('file', file, file.name || 'workbook.xlsx');
+      const resp = await fetch('{% url "stays:import_probe_sheets" %}', {
+        method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRFToken': getCsrf() }
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data || !Array.isArray(data.sheets)) throw new Error(data && data.error ? data.error : 'Probe failed');
+      sheetSelect.innerHTML = '';
+      if (data.sheets.length) {
+        data.sheets.forEach(name => {
+          const opt = document.createElement('option'); opt.value = name; opt.textContent = name; sheetSelect.appendChild(opt);
+        });
+        sheetLabel.style.display = '';
+        sheetSelect.style.display = '';
+        sheetInput.style.display = 'none';
+      } else {
+        sheetLabel.style.display = '';
+        sheetSelect.style.display = 'none';
+        sheetInput.style.display = '';
+      }
+      setStatus('Detected ' + data.sheets.length + ' sheet(s).');
+    } catch (e) {
+      // Fallback to manual text input if probe fails
+      sheetLabel.style.display = '';
+      sheetSelect.style.display = 'none';
+      sheetInput.style.display = '';
+      setStatus('Could not detect sheets: ' + (e && e.message ? e.message : e) + '. You can type a sheet name.', false);
+    }
   }
 
   if (!supportsFS) {
@@ -78,7 +145,7 @@
   pickBtn.addEventListener('click', async () => {
     try {
       const [handle] = await window.showOpenFilePicker({
-        types: [{ description: 'CSV Files', accept: { 'text/csv': ['.csv'] } }],
+        types: [{ description: 'CSV or Excel', accept: { 'text/csv': ['.csv'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'], 'application/vnd.ms-excel.sheet.macroEnabled.12': ['.xlsm'], 'application/vnd.ms-excel': ['.xls'] } }],
         multiple: false,
       });
       const file = await handle.getFile();
@@ -86,16 +153,21 @@
       label.textContent = 'Selected: ' + (file.name || 'file.csv');
       importBtn.disabled = false;
       setStatus('File selected. Ready to import.');
+      const lname = (file.name || '').toLowerCase();
+      if (lname.match(/\.(xlsx|xlsm|xltx|xltm)$/)) {
+        await probeSheets(file);
+      } else {
+        sheetLabel.style.display = 'none';
+        sheetSelect.innerHTML = '';
+        sheetInput.value = '';
+      }
     } catch (e) {
       if (e && e.name === 'AbortError') return; // user canceled
       setStatus('Could not open file: ' + (e && e.message ? e.message : e), false);
     }
   });
 
-  function getCsrf(){
-    const el = form.querySelector('input[name="csrfmiddlewaretoken"]');
-    return el ? el.value : '';
-  }
+  // getCsrf defined above
 
   // Drag & drop support
   if (dropZone) {
@@ -114,14 +186,22 @@
       const files = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : null;
       if (!files || files.length === 0) { setStatus('No file dropped.', false); return; }
       const file = files[0];
-      if (!file.name || !file.name.toLowerCase().endsWith('.csv')) {
-        setStatus('Please drop a .csv file.', false);
+      if (!file.name || !file.name.toLowerCase().match(/\.(csv|xlsx|xlsm|xltx|xltm)$/)) {
+        setStatus('Please drop a .csv or .xlsx file.', false);
         return;
       }
       pickedFile = file;
       label.textContent = 'Selected: ' + (file.name || 'file.csv');
       importBtn.disabled = false;
       setStatus('File selected. Ready to import.', true);
+      const lname2 = (file.name || '').toLowerCase();
+      if (lname2.match(/\.(xlsx|xlsm|xltx|xltm)$/)) {
+        await probeSheets(file);
+      } else {
+        sheetLabel.style.display = 'none';
+        sheetSelect.innerHTML = '';
+        sheetInput.value = '';
+      }
     });
   }
 
@@ -136,7 +216,12 @@
       // carry options from the form
       const delim = form.querySelector('select[name="delimiter"]').value || 'auto';
       const dry = form.querySelector('input[name="dry_run"]').checked;
-      const sheet = (form.querySelector('input[name="sheet"]').value || '').trim();
+      let sheet = '';
+      if (sheetSelect && sheetSelect.style.display !== 'none' && sheetSelect.value) {
+        sheet = sheetSelect.value.trim();
+      } else if (sheetInput && sheetInput.style.display !== 'none' && sheetInput.value) {
+        sheet = sheetInput.value.trim();
+      }
       const autoGeo = form.querySelector('input[name="autogeocode"]').checked;
       fd.append('delimiter', delim);
       if (dry) fd.append('dry_run', '1');

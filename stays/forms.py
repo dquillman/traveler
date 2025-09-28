@@ -11,6 +11,10 @@ class StayForm(forms.ModelForm):
         for fname in ("latitude", "longitude"):
             if fname in self.fields:
                 self.fields[fname].widget = forms.NumberInput(attrs={"step": "0.000001", "inputmode": "decimal"})
+        # Use native date pickers where supported
+        for fname in ("check_in", "leave_date"):
+            if fname in self.fields:
+                self.fields[fname].widget = forms.DateInput(attrs={"type": "date"})
         if "rating" in self.fields:
             self.fields["rating"].widget = forms.RadioSelect(choices=[(i, str(i)) for i in range(1,6)])
             self.fields["rating"].required = False

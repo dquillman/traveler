@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from time import sleep
 from stays.models import Stay
-from stays.utils import build_query_from_stay, geocode_address
+from stays.utils import geocode_from_stay
 
 class Command(BaseCommand):
     help = "Backfill latitude/longitude for Stay rows missing coordinates using city/state/address."
@@ -16,10 +16,7 @@ class Command(BaseCommand):
         for stay in qs.iterator():
             if limit is not None and processed >= limit:
                 break
-            q = build_query_from_stay(stay)
-            if not q:
-                continue
-            coords = geocode_address(q)
+            coords = geocode_from_stay(stay)
             if coords:
                 stay.latitude, stay.longitude = coords
                 stay.save(update_fields=['latitude', 'longitude'])
