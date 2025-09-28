@@ -90,6 +90,31 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 # App version (surface in navbar). Update on releases.
 APP_VERSION = "v0.1.24"
 
+# --- Optional S3/R2 media storage ---
+AWS_BUCKET = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
+AWS_S3_CUSTOM_DOMAIN = os.getenv('AWS_S3_CUSTOM_DOMAIN')
+if AWS_BUCKET:
+    INSTALLED_APPS.append('storages')
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        },
+        'staticfiles': {
+            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage' if _WHITENOISE else 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_REGION_NAME = AWS_S3_REGION_NAME or None
+    AWS_S3_ENDPOINT_URL = AWS_S3_ENDPOINT_URL or None
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN.rstrip('/')}/"
+    elif AWS_S3_ENDPOINT_URL and AWS_BUCKET:
+        MEDIA_URL = f"{AWS_S3_ENDPOINT_URL.rstrip('/')}/{AWS_BUCKET}/"
+
 # --- Production security (effective when DEBUG is False) ---
 # Trust proxy headers for HTTPS (Render/most PaaS set X-Forwarded-Proto)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
