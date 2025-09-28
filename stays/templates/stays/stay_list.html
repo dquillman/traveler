@@ -83,7 +83,9 @@
           <tr>
             <td>
               {% if s.photo %}
-                <img class="thumb" src="{{ s.photo.url }}" alt="{{ s.park|default:'photo' }}"/>
+                <a href="{% url 'stays:detail' s.pk %}" title="View stay">
+                  <img class="thumb" src="{{ s.photo.url }}" alt="{{ s.park|default:'photo' }}"/>
+                </a>
               {% else %}
                 &mdash;
               {% endif %}
