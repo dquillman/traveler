@@ -65,6 +65,16 @@ DATABASES = {
     }
 }
 
+# If DATABASE_URL is provided (e.g., on Render with PostgreSQL), use it.
+_DATABASE_URL = os.getenv('DATABASE_URL')
+if _DATABASE_URL:
+    try:
+        import dj_database_url  # type: ignore
+        DATABASES['default'] = dj_database_url.parse(_DATABASE_URL, conn_max_age=600)
+    except Exception:
+        # Fallback: keep sqlite if parsing package unavailable
+        pass
+
 AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = 'en-us'
@@ -130,3 +140,6 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# CSRF trusted origins (needed for HTTPS on Render)
+CSRF_TRUSTED_ORIGINS = [o for o in os.getenv('CSRF_TRUSTED_ORIGINS', 'https://*.onrender.com').split(',') if o]
