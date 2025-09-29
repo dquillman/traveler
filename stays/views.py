@@ -13,6 +13,9 @@ from django.conf import settings
 from django.contrib import messages
 
 from .models import Stay
+from decimal import Decimal
+from datetime import datetime
+from django.db import models as dj_models
 
 # Try to use your app's form; fallback to a simple ModelForm
 try:
@@ -373,24 +376,34 @@ def stay_detail(request, pk):
     # Build a list of (label, value) for all concrete model fields
     all_fields = []
     for f in Stay._meta.fields:
+        # Skip photo here; it's already shown at the top
+        if f.name == "photo":
+            continue
         label = getattr(f, "verbose_name", f.name) or f.name
         try:
             label = str(label).capitalize()
         except Exception:
             label = f.name
         val = getattr(obj, f.name, None)
-        # File/Image fields may have a url
+        # Pretty formatting by field type/name
         display = None
         try:
-            if hasattr(val, "url"):
-                display = val.url
+            # Dates
+            if isinstance(f, dj_models.DateField) and val:
+                display = val.strftime("%Y-%m-%d")
+            # Decimals (money/coords)
+            elif isinstance(f, dj_models.DecimalField) and val is not None:
+                if f.name in {"latitude", "longitude"}:
+                    display = f"{float(val):.6f}"
+                elif f.name in {"price_night", "total", "fees"}:
+                    display = f"{float(val):.2f}"
+            # Booleans
+            elif isinstance(f, dj_models.BooleanField):
+                display = "Yes" if bool(val) else "No"
         except Exception:
             display = None
         if display is None:
-            if isinstance(val, bool):
-                display = "Yes" if val else "No"
-            else:
-                display = val if (val not in (None, "")) else "—"
+            display = val if (val not in (None, "")) else "—"
         all_fields.append((label, display))
     # Include a useful derived value
     try:
