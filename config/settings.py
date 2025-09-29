@@ -6,7 +6,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'dev-not-for-prod'
 # Allow DEBUG/ALLOWED_HOSTS to be configured via environment for deployments
 DEBUG = os.getenv('DEBUG', 'True').lower() in {'1', 'true', 'yes', 'on'}
-ALLOWED_HOSTS = [h for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,[::1],.onrender.com').split(',') if h]
+
+# Robustly parse ALLOWED_HOSTS from env; tolerate quotes/whitespace and empty values
+_ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS')
+if _ALLOWED_HOSTS_ENV:
+    ALLOWED_HOSTS = [h.strip().strip('"\'') for h in _ALLOWED_HOSTS_ENV.split(',') if h.strip().strip('"\'')]
+else:
+    # Sensible defaults for local + Render
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", ".onrender.com"]
+
+# CSRF trusted origins for hosted envs (only affects POST/CSRf-protected views)
+_CSRF_ENV = os.getenv('CSRF_TRUSTED_ORIGINS')
+if _CSRF_ENV:
+    CSRF_TRUSTED_ORIGINS = [o.strip().strip('"\'') for o in _CSRF_ENV.split(',') if o.strip().strip('"\'')]
+else:
+    CSRF_TRUSTED_ORIGINS = ["https://*.onrender.com"]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
