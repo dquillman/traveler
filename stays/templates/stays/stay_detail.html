@@ -2,7 +2,7 @@
 {% block title %}Stay{% endblock %}
 {% block content %}
 <div class="container mx-auto px-4 py-6 max-w-3xl">
-  {# Title and location summary removed per request #}
+  <h1 class="text-2xl font-semibold mb-2">{{ stay.park|default:'Stay' }}</h1>
   {% if stay.photo %}
   <div class="mb-6">
     <img src="{{ stay.photo.url }}" alt="{{ stay.park|default:'photo' }}" style="max-width:100%; height:auto; border-radius:10px; border:1px solid var(--border);" />
