@@ -118,7 +118,7 @@ GEOCODER_USER_AGENT = "traveler-app"
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # App version (surface in navbar). Update on releases.
-APP_VERSION = "v0.1.26"
+APP_VERSION = "v0.1.27"
 
 # --- Optional S3/R2 media storage ---
 AWS_BUCKET = os.getenv('AWS_STORAGE_BUCKET_NAME')
