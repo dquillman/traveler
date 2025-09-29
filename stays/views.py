@@ -370,7 +370,39 @@ def geocode_missing(request):
 
 def stay_detail(request, pk):
     obj = get_object_or_404(Stay, pk=pk)
-    return render(request, "stays/stay_detail.html", {"stay": obj, "stars": [1, 2, 3, 4, 5]})
+    # Build a list of (label, value) for all concrete model fields
+    all_fields = []
+    for f in Stay._meta.fields:
+        label = getattr(f, "verbose_name", f.name) or f.name
+        try:
+            label = str(label).capitalize()
+        except Exception:
+            label = f.name
+        val = getattr(obj, f.name, None)
+        # File/Image fields may have a url
+        display = None
+        try:
+            if hasattr(val, "url"):
+                display = val.url
+        except Exception:
+            display = None
+        if display is None:
+            if isinstance(val, bool):
+                display = "Yes" if val else "No"
+            else:
+                display = val if (val not in (None, "")) else "—"
+        all_fields.append((label, display))
+    # Include a useful derived value
+    try:
+        all_fields.append(("Nights", obj.nights))
+    except Exception:
+        pass
+
+    return render(
+        request,
+        "stays/stay_detail.html",
+        {"stay": obj, "stars": [1, 2, 3, 4, 5], "all_fields": all_fields},
+    )
 
 def stay_add(request):
     if request.method == "POST":

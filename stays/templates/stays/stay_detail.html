@@ -26,6 +26,25 @@
       <span class="opacity-70">—</span>
     {% endif %}
   </div>
+  <div class="card" style="margin: 16px 0; padding: 12px;">
+    <h2 style="margin-top:0;">Details</h2>
+    <table class="table">
+      <tbody>
+      {% for label, value in all_fields %}
+        <tr>
+          <th style="text-align:left; white-space:nowrap; width: 30%;">{{ label }}</th>
+          <td>
+            {% if label|lower == 'photo' and stay.photo %}
+              <a href="{{ stay.photo.url }}" target="_blank" rel="noopener">{{ value }}</a>
+            {% else %}
+              {{ value }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
   <div class="flex gap-4">
     <a class="btn btn-primary" href="{% url 'stays:edit' stay.pk %}">Edit</a>
     <a class="btn" href="{% url 'stays:list' %}">Back</a>
