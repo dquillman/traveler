@@ -9,18 +9,23 @@ DEBUG = os.getenv('DEBUG', 'True').lower() in {'1', 'true', 'yes', 'on'}
 
 # Robustly parse ALLOWED_HOSTS from env; tolerate quotes/whitespace and empty values
 _ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS')
-if _ALLOWED_HOSTS_ENV:
-    ALLOWED_HOSTS = [h.strip().strip('"\'') for h in _ALLOWED_HOSTS_ENV.split(',') if h.strip().strip('"\'')]
+_DEFAULT_HOSTS = ["localhost", "127.0.0.1", "[::1]", ".onrender.com"]
+if _ALLOWED_HOSTS_ENV is None:
+    # No env provided → use defaults
+    ALLOWED_HOSTS = _DEFAULT_HOSTS
 else:
-    # Sensible defaults for local + Render
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", ".onrender.com"]
+    # Env provided; parse and ignore empties/quotes/whitespace
+    _parsed_hosts = [h.strip().strip('"\'') for h in _ALLOWED_HOSTS_ENV.split(',') if h.strip().strip('"\'')]
+    # If parsing yields nothing (e.g., value was "" or spaces), fall back to defaults
+    ALLOWED_HOSTS = _parsed_hosts or _DEFAULT_HOSTS
 
 # CSRF trusted origins for hosted envs (only affects POST/CSRf-protected views)
 _CSRF_ENV = os.getenv('CSRF_TRUSTED_ORIGINS')
-if _CSRF_ENV:
-    CSRF_TRUSTED_ORIGINS = [o.strip().strip('"\'') for o in _CSRF_ENV.split(',') if o.strip().strip('"\'')]
-else:
+if _CSRF_ENV is None:
     CSRF_TRUSTED_ORIGINS = ["https://*.onrender.com"]
+else:
+    _parsed_origins = [o.strip().strip('"\'') for o in _CSRF_ENV.split(',') if o.strip().strip('"\'')]
+    CSRF_TRUSTED_ORIGINS = _parsed_origins or ["https://*.onrender.com"]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
