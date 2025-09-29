@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from datetime import datetime, timezone
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -118,7 +119,10 @@ GEOCODER_USER_AGENT = "traveler-app"
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # App version (surface in navbar). Update on releases.
-APP_VERSION = "v0.1.28"
+APP_VERSION = "v0.1.29"
+
+# Build timestamp (for display in UI). Can be provided by env; otherwise set at import time.
+APP_BUILD_AT = os.getenv('BUILD_TIMESTAMP') or datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')
 
 # --- Optional S3/R2 media storage ---
 AWS_BUCKET = os.getenv('AWS_STORAGE_BUCKET_NAME')

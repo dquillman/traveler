@@ -37,5 +37,6 @@ def site_appearance(request):
             "theme": theme,
         },
         "app_version": getattr(settings, "APP_VERSION", "v0.1.0"),
+        "app_build_at": getattr(settings, "APP_BUILD_AT", ""),
         "stay_count": stay_count,
     }

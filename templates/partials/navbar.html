@@ -2,7 +2,10 @@
   <nav class="container">
     <div style="display:flex; align-items:center; gap:.5rem;">
       <a class="brand" href="/">Traveler</a>
-      <span class="version-pill">{{ app_version }}</span>
+      <span class="version-pill" title="Build time">{{ app_version }}</span>
+      {% if app_build_at %}
+      <span class="count-pill" title="Build time">{{ app_build_at }}</span>
+      {% endif %}
       <span class="count-pill">Total Stays: {{ stay_count }}</span>
     </div>
     <ul class="menu">
