@@ -119,7 +119,7 @@ GEOCODER_USER_AGENT = "traveler-app"
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # App version (surface in navbar). Update on releases.
-APP_VERSION = "v0.1.29"
+APP_VERSION = "v0.1.30"
 
 # Build timestamp (for display in UI). Can be provided by env; otherwise set at import time.
 APP_BUILD_AT = os.getenv('BUILD_TIMESTAMP') or datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')

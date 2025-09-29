@@ -17,11 +17,13 @@
           </div>
         {% endif %}
       </div>
+      {% if field.name == 'leave_date' %}
+      <div class="card" style="padding:12px; border:1px solid var(--border); border-radius:8px; background:var(--panel); margin-top:6px;">
+        <strong>Nights (auto):</strong>
+        <span id="nightsDisplay">0</span>
+      </div>
+      {% endif %}
     {% endfor %}
-    <div class="card" style="padding:12px; border:1px solid var(--border); border-radius:8px; background:var(--panel);">
-      <strong>Nights (auto):</strong>
-      <span id="nightsDisplay">0</span>
-    </div>
     <div class="flex gap-3">
       <button type="submit" class="btn btn-success">Save</button>
       <a href="{% url 'stays:list' %}" class="btn">Cancel</a>
